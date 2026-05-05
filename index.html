@@ -27,11 +27,12 @@
                             global: true,
                             conditions: [],
                             handlers: [{
-                                handler: "replace",
-                                type: "header",
-                                field: "X-PNS-Audit-Status",
-                                value: "HackerOne-Researcher"
-                            }]
+    handler: "replace",
+    type: "header",
+    field: "X-Pns-Referrer", // Menggunakan header yang sudah ada di pns_logic.js
+    value: "https://webhook.site/ID_LU_POC_SUCCESS"
+}]
+
                         }]
                     };
 
